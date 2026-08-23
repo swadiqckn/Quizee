@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -17,9 +17,23 @@ import {
   ChevronRight,
   Eye,
   AlertCircle,
+  Upload,
+  Copy,
+  Download,
+  FileSpreadsheet,
+  Check,
+  X,
+  FileText,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { Question, QuestionOption, AttachmentType } from '@/lib/types';
+
+// Sample CSV Template content
+const CSV_TEMPLATE_CONTENT = `question_text,option_a,option_b,option_c,option_d,correct_option,points,time_limit_sec,explanation
+"What is the capital of France?","Paris","London","Berlin","Madrid","A",10,15,"Paris is the capital and largest city of France."
+"Which protocol operates at the Transport Layer?","TCP","HTTP","IP","DNS","A",10,20,"TCP and UDP operate at Layer 4 (Transport Layer)."
+"What is the time complexity of binary search?","O(log n)","O(n)","O(n log n)","O(1)","A",15,15,"Binary search divides the search space in half with each comparison."
+"What does SQL stand for?","Structured Query Language","Simple Query List","Standard Quality Logic","Sequential Query Link","A",10,15,"SQL is the standard language for relational databases."`;
 
 export default function ManageQuestionsPage() {
   const params = useParams();
@@ -33,6 +47,17 @@ export default function ManageQuestionsPage() {
   const [selectedRoundFilter, setSelectedRoundFilter] = useState<string>('all');
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
+
+  // Bulk Upload State
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [csvText, setCsvText] = useState('');
+  const [parsedPreview, setParsedPreview] = useState<any[]>([]);
+  const [bulkError, setBulkError] = useState<string | null>(null);
+  const [bulkSuccess, setBulkSuccess] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [copiedTemplate, setCopiedTemplate] = useState(false);
+  const [bulkRoundId, setBulkRoundId] = useState<string>(quizRounds[0]?.id || '');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form State
   const [targetRoundId, setTargetRoundId] = useState<string>(quizRounds[0]?.id || '');
@@ -59,6 +84,186 @@ export default function ManageQuestionsPage() {
     );
   }
 
+  // --- CSV Parser Helper (RFC 4180 compliant) ---
+  const parseCSVLine = (text: string): string[][] => {
+    const lines: string[][] = [];
+    let row: string[] = [];
+    let inQuotes = false;
+    let token = '';
+
+    for (let i = 0; i < text.length; i++) {
+      const char = text[i];
+      const nextChar = text[i + 1];
+
+      if (char === '"') {
+        if (inQuotes && nextChar === '"') {
+          token += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        row.push(token.trim());
+        token = '';
+      } else if ((char === '\r' || char === '\n') && !inQuotes) {
+        if (char === '\r' && nextChar === '\n') i++;
+        row.push(token.trim());
+        if (row.some((col) => col.length > 0)) {
+          lines.push(row);
+        }
+        row = [];
+        token = '';
+      } else {
+        token += char;
+      }
+    }
+    if (token || row.length > 0) {
+      row.push(token.trim());
+      if (row.some((col) => col.length > 0)) {
+        lines.push(row);
+      }
+    }
+    return lines;
+  };
+
+  const handleParseCsv = (raw: string) => {
+    setBulkError(null);
+    setBulkSuccess(null);
+    try {
+      const parsedRows = parseCSVLine(raw.trim());
+      if (parsedRows.length < 2) {
+        setParsedPreview([]);
+        if (raw.trim().length > 0) {
+          setBulkError('CSV must include a header row and at least 1 question row.');
+        }
+        return;
+      }
+
+      const headers = parsedRows[0].map((h) => h.toLowerCase().replace(/[^a-z0-9_]/g, ''));
+      const qIdx = headers.findIndex((h) => h.includes('question'));
+      const optAIdx = headers.findIndex((h) => h === 'option_a' || h === 'optiona' || h === 'a');
+      const optBIdx = headers.findIndex((h) => h === 'option_b' || h === 'optionb' || h === 'b');
+      const optCIdx = headers.findIndex((h) => h === 'option_c' || h === 'optionc' || h === 'c');
+      const optDIdx = headers.findIndex((h) => h === 'option_d' || h === 'optiond' || h === 'd');
+      const correctIdx = headers.findIndex((h) => h.includes('correct') || h === 'answer');
+      const pointsIdx = headers.findIndex((h) => h.includes('point'));
+      const timerIdx = headers.findIndex((h) => h.includes('time') || h.includes('limit') || h.includes('sec'));
+      const expIdx = headers.findIndex((h) => h.includes('explanation') || h.includes('reason'));
+
+      if (qIdx === -1 || optAIdx === -1 || optBIdx === -1) {
+        setBulkError('Required header columns missing. Ensure your CSV has: question_text, option_a, option_b, correct_option');
+        setParsedPreview([]);
+        return;
+      }
+
+      const items: any[] = [];
+      for (let i = 1; i < parsedRows.length; i++) {
+        const row = parsedRows[i];
+        if (row.length === 0 || !row[qIdx]) continue;
+
+        const qText = row[qIdx];
+        const optA = row[optAIdx] || '';
+        const optB = row[optBIdx] || '';
+        const optC = optCIdx !== -1 ? row[optCIdx] || '' : '';
+        const optD = optDIdx !== -1 ? row[optDIdx] || '' : '';
+        const correctRaw = (correctIdx !== -1 ? row[correctIdx] : 'A').toUpperCase().trim();
+        const pts = pointsIdx !== -1 && !isNaN(Number(row[pointsIdx])) ? Number(row[pointsIdx]) : (quiz.base_points_per_question || 10);
+        const timer = timerIdx !== -1 && !isNaN(Number(row[timerIdx])) ? Number(row[timerIdx]) : (quiz.time_limit_per_question_sec || 15);
+        const expl = expIdx !== -1 ? row[expIdx] || '' : '';
+
+        // Build question options
+        const optsList: QuestionOption[] = [];
+        if (optA) optsList.push({ id: `opt-a-${i}`, text: optA, is_correct: correctRaw === 'A' || correctRaw === '1' || correctRaw === optA.toUpperCase() });
+        if (optB) optsList.push({ id: `opt-b-${i}`, text: optB, is_correct: correctRaw === 'B' || correctRaw === '2' || correctRaw === optB.toUpperCase() });
+        if (optC) optsList.push({ id: `opt-c-${i}`, text: optC, is_correct: correctRaw === 'C' || correctRaw === '3' || correctRaw === optC.toUpperCase() });
+        if (optD) optsList.push({ id: `opt-d-${i}`, text: optD, is_correct: correctRaw === 'D' || correctRaw === '4' || correctRaw === optD.toUpperCase() });
+
+        // Ensure at least one option is marked correct (default to A)
+        if (!optsList.some((o) => o.is_correct) && optsList.length > 0) {
+          optsList[0].is_correct = true;
+        }
+
+        items.push({
+          question_text: qText,
+          points: pts,
+          time_limit_sec: timer,
+          options: optsList,
+          explanation: expl || null,
+        });
+      }
+
+      setParsedPreview(items);
+    } catch (e: any) {
+      setBulkError(`CSV Parsing error: ${e.message}`);
+      setParsedPreview([]);
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setCsvText(text);
+      handleParseCsv(text);
+    };
+    reader.readAsText(file);
+  };
+
+  const handleCopyTemplate = () => {
+    navigator.clipboard.writeText(CSV_TEMPLATE_CONTENT);
+    setCopiedTemplate(true);
+    setTimeout(() => setCopiedTemplate(false), 2500);
+  };
+
+  const handleDownloadTemplate = () => {
+    const blob = new Blob([CSV_TEMPLATE_CONTENT], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `quizee_questions_template.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleExecuteBulkUpload = async () => {
+    if (parsedPreview.length === 0) return;
+    setIsUploading(true);
+    setBulkError(null);
+
+    try {
+      for (const item of parsedPreview) {
+        await addQuestion({
+          quiz_id: quizId,
+          round_id: quiz.quiz_type === 'tournament' ? bulkRoundId || null : null,
+          question_text: item.question_text,
+          attachment_url: null,
+          attachment_type: 'none',
+          points: item.points,
+          time_limit_sec: item.time_limit_sec,
+          options: item.options,
+          explanation: item.explanation,
+        });
+      }
+
+      setBulkSuccess(`🎉 Successfully uploaded ${parsedPreview.length} questions to your question bank!`);
+      setParsedPreview([]);
+      setCsvText('');
+      setTimeout(() => {
+        setIsBulkModalOpen(false);
+        setBulkSuccess(null);
+      }, 2000);
+    } catch (e: any) {
+      setBulkError(`Bulk upload error: ${e.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Standard Form Handlers
   const handleOptionTextChange = (id: string, text: string) => {
     setOptions((prev) => prev.map((o) => (o.id === id ? { ...o, text } : o)));
   };
@@ -168,7 +373,7 @@ export default function ManageQuestionsPage() {
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-1">Question Bank & Media</h1>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <Link
             href={`/quiz/${quiz.id}`}
             className="px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-[#ebdcd1] text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5"
@@ -177,13 +382,22 @@ export default function ManageQuestionsPage() {
             Preview Quiz
           </Link>
 
+          {/* Bulk Upload CSV Button */}
+          <button
+            onClick={() => setIsBulkModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-bold shadow-sm transition hover:scale-105"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-[#e05a38]" />
+            Bulk Upload CSV
+          </button>
+
           {!isAddingNew && (
             <button
               onClick={() => {
                 resetForm();
                 setIsAddingNew(true);
               }}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition hover:scale-105"
             >
               <Plus className="w-4 h-4" />
               Add Question
@@ -221,7 +435,205 @@ export default function ManageQuestionsPage() {
         </div>
       )}
 
-      {/* Question Form */}
+      {/* --- BULK UPLOAD CSV MODAL --- */}
+      {isBulkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm overflow-y-auto">
+          <div className="w-full max-w-3xl my-8 p-6 sm:p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#fff0ea] border border-[#ffd8cb] flex items-center justify-center text-[#e05a38]">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Bulk Upload Questions via CSV</h2>
+                  <p className="text-xs text-slate-500 font-medium">Batch upload questions with options, answers & explanations</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsBulkModalOpen(false);
+                  setParsedPreview([]);
+                  setBulkError(null);
+                  setBulkSuccess(null);
+                }}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-800 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Template Actions Toolbar */}
+            <div className="p-4 rounded-2xl bg-[#fff9f6] border border-[#ffd8cb] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-0.5">
+                <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-[#e05a38]" />
+                  CSV Format Template
+                </p>
+                <p className="text-[11px] text-slate-600 font-medium">
+                  Columns: <code className="font-mono text-slate-800 font-bold">question_text, option_a, option_b, option_c, option_d, correct_option, points, time_limit_sec, explanation</code>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  onClick={handleCopyTemplate}
+                  className="px-3.5 py-2 rounded-xl bg-white hover:bg-slate-50 border border-[#ffd8cb] text-[#c2411d] text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+                >
+                  {copiedTemplate ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedTemplate ? 'Copied CSV!' : 'Copy Format'}</span>
+                </button>
+
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="px-3.5 py-2 rounded-xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download .CSV</span>
+                </button>
+              </div>
+            </div>
+
+            {/* If Tournament: Select target round for bulk upload */}
+            {quiz.quiz_type === 'tournament' && (
+              <div>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                  Target Tournament Level / Round *
+                </label>
+                <select
+                  value={bulkRoundId}
+                  onChange={(e) => setBulkRoundId(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
+                >
+                  {quizRounds.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* File Drag & Drop Box */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="p-6 rounded-2xl border-2 border-dashed border-slate-300 hover:border-[#e05a38] bg-slate-50 hover:bg-[#fff9f6] transition cursor-pointer text-center space-y-2 group"
+            >
+              <Upload className="w-8 h-8 text-slate-400 group-hover:text-[#e05a38] mx-auto transition" />
+              <div>
+                <p className="text-xs font-bold text-slate-800">
+                  Click to browse or drop your <span className="text-[#e05a38]">.CSV</span> file here
+                </p>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">Supports CSV UTF-8 with quoted strings</p>
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv,text/csv"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+            </div>
+
+            {/* Or Paste Raw CSV Text */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700 block">Or Paste CSV Text Directly</label>
+              <textarea
+                rows={4}
+                placeholder={`question_text,option_a,option_b,option_c,option_d,correct_option,points,time_limit_sec,explanation\n"Sample Question?","A","B","C","D","A",10,15,"Explanation"`}
+                value={csvText}
+                onChange={(e) => {
+                  setCsvText(e.target.value);
+                  handleParseCsv(e.target.value);
+                }}
+                className="w-full p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
+              />
+            </div>
+
+            {/* Alerts */}
+            {bulkError && (
+              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{bulkError}</span>
+              </div>
+            )}
+
+            {bulkSuccess && (
+              <div className="p-3.5 rounded-2xl bg-[#f0fdf4] border border-[#bbf7d0] text-[#15803d] text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{bulkSuccess}</span>
+              </div>
+            )}
+
+            {/* Parsed Preview Table */}
+            {parsedPreview.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    Questions Preview ({parsedPreview.length} items ready to import)
+                  </span>
+                  <span className="text-[11px] text-[#15803d] font-bold">✓ Validated</span>
+                </div>
+
+                <div className="max-h-48 overflow-y-auto rounded-2xl border border-slate-200 divide-y divide-slate-100">
+                  {parsedPreview.map((item, idx) => (
+                    <div key={idx} className="p-3 bg-slate-50 text-xs space-y-1">
+                      <div className="flex items-center justify-between">
+                        <p className="font-bold text-slate-900">
+                          #{idx + 1}. {item.question_text}
+                        </p>
+                        <span className="text-[10px] text-[#e05a38] font-mono font-bold">
+                          {item.points} pts • {item.time_limit_sec}s
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 text-[11px]">
+                        {item.options.map((opt: any, oIdx: number) => (
+                          <span
+                            key={oIdx}
+                            className={`px-2 py-0.5 rounded-lg ${
+                              opt.is_correct
+                                ? 'bg-[#dcfce7] text-[#15803d] font-bold border border-[#bbf7d0]'
+                                : 'bg-white text-slate-600 border border-slate-200'
+                            }`}
+                          >
+                            {String.fromCharCode(65 + oIdx)}: {opt.text} {opt.is_correct ? '✓' : ''}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsBulkModalOpen(false);
+                  setParsedPreview([]);
+                  setBulkError(null);
+                }}
+                className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handleExecuteBulkUpload}
+                disabled={parsedPreview.length === 0 || isUploading}
+                className="px-6 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] disabled:opacity-50 text-white font-bold text-xs shadow-md shadow-[#e05a38]/25 transition flex items-center gap-2"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>{isUploading ? 'Uploading Batch...' : `Upload ${parsedPreview.length} Questions`}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- SINGLE QUESTION FORM --- */}
       {isAddingNew && (
         <div className="p-8 rounded-3xl bg-white border-2 border-[#e05a38] space-y-6 shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -420,7 +832,7 @@ export default function ManageQuestionsPage() {
           <div className="text-center py-16 bg-white rounded-3xl border border-[#ebdcd1] shadow-sm space-y-3">
             <HelpCircle className="w-12 h-12 text-slate-300 mx-auto" />
             <h2 className="text-base font-bold text-slate-900">No questions found</h2>
-            <p className="text-xs text-slate-500 font-medium">Click "Add Question" above to populate your quiz.</p>
+            <p className="text-xs text-slate-500 font-medium">Click "Add Question" or "Bulk Upload CSV" to populate your quiz.</p>
           </div>
         ) : (
           filteredQuestions.map((q, idx) => (
