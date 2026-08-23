@@ -36,12 +36,17 @@ export default function QuizDetailPage() {
   const quizRounds = rounds.filter((r) => r.quiz_id === quizId).sort((a, b) => a.round_number - b.round_number);
   const quizQuestions = questions.filter((q) => q.quiz_id === quizId);
   const [copiedLink, setCopiedLink] = useState(false);
+  const existingCompletedEntry = entries.find(
+    (e) => e.quiz_id === quiz?.id && (currentUser ? e.user_id === currentUser.id : false) && e.status === 'submitted'
+  );
+  const disallowRetries = quiz && quiz.allow_retries !== true;
 
   const handleShareOrInvite = () => {
     if (typeof window === 'undefined') return;
+    const slugPath = quiz?.slug || (quiz?.title ? quiz.title.toLowerCase().replace(/[^a-z0-9]/g, '') : null) || quiz.id;
     const shareUrl = currentUser?.referral_code
-      ? `${window.location.origin}/quiz/${quiz.id}?ref=${currentUser.referral_code}`
-      : `${window.location.origin}/quiz/${quiz.id}`;
+      ? `${window.location.origin}/${slugPath}?ref=${currentUser.referral_code}`
+      : `${window.location.origin}/${slugPath}`;
     navigator.clipboard.writeText(shareUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
@@ -155,14 +160,25 @@ export default function QuizDetailPage() {
 
           {/* Action CTAs */}
           <div className="pt-6 flex flex-wrap items-center gap-4">
-            <Link
-              href={`/quiz/${quiz.id}/play${activeRound ? `?roundId=${activeRound.id}` : ''}`}
-              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-sm shadow-xl shadow-[#e05a38]/25 transition-all hover:scale-105"
-            >
-              <Zap className="w-4 h-4" />
-              {activeRound ? `Enter Arena: ${activeRound.title}` : 'Enter Competition Arena'}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            {currentUser && existingCompletedEntry && disallowRetries ? (
+              <Link
+                href={`/quiz/${quiz.id}/results?entryId=${existingCompletedEntry.id}`}
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#15803d] hover:bg-[#166534] text-white font-bold text-sm shadow-xl shadow-[#15803d]/25 transition-all hover:scale-105"
+              >
+                <Trophy className="w-4 h-4" />
+                <span>View Results & Answers ({existingCompletedEntry.score} pts)</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <Link
+                href={`/quiz/${quiz.id}/play${activeRound ? `?roundId=${activeRound.id}` : ''}`}
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-sm shadow-xl shadow-[#e05a38]/25 transition-all hover:scale-105"
+              >
+                <Zap className="w-4 h-4" />
+                {activeRound ? `Enter Arena: ${activeRound.title}` : 'Enter Competition Arena'}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
 
             {quiz.enable_referral_bonus ? (
               <button

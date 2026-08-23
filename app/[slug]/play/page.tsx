@@ -32,7 +32,7 @@ function SlugQuizPlayContent() {
   const slug = params.slug as string;
   const roundId = searchParams.get('roundId');
 
-  const { quizzes, rounds, questions, submitQuizAttempt, currentUser, loginWithGoogle, isLoading } = useQuizPlatform();
+  const { quizzes, rounds, questions, entries, submitQuizAttempt, currentUser, loginWithGoogle, isLoading } = useQuizPlatform();
   const [directQuiz, setDirectQuiz] = useState<any>(null);
   const [isFetchingDirect, setIsFetchingDirect] = useState(false);
 
@@ -212,6 +212,63 @@ function SlugQuizPlayContent() {
         <Link href="/explore" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#e05a38] text-white text-xs font-bold hover:bg-[#c84a29] transition shadow-sm mt-2">
           Back to Explore
         </Link>
+      </div>
+    );
+  }
+
+  // Check if participant already completed this quiz and retries are disallowed
+  const existingCompletedEntry = entries.find(
+    (e) => e.quiz_id === quiz.id && (currentUser ? e.user_id === currentUser.id : false) && e.status === 'submitted'
+  );
+
+  const disallowRetries = quiz.allow_retries !== true;
+
+  if (currentUser && existingCompletedEntry && disallowRetries) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-white border border-[#ebdcd1] shadow-2xl space-y-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-sm">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
+              Single Attempt Only
+            </span>
+            <h1 className="text-2xl font-bold text-slate-900">Attempt Already Completed</h1>
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              You have already completed <strong className="text-slate-900">{quiz.title}</strong>. This competition does not allow multiple attempts.
+            </p>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold">Your Score</p>
+              <p className="text-xl font-bold text-[#e05a38]">{existingCompletedEntry.score} pts</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 font-bold">Correct</p>
+              <p className="text-xl font-bold text-[#15803d]">{existingCompletedEntry.total_correct} correct</p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5 pt-2">
+            <Link
+              href={`/${slug}/results?entryId=${existingCompletedEntry.id}`}
+              className="w-full py-3.5 px-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition flex items-center justify-center gap-2"
+            >
+              <Trophy className="w-4 h-4" />
+              <span>View Results & Answers</span>
+            </Link>
+
+            <Link
+              href={`/${slug}`}
+              className="w-full py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-2"
+            >
+              <span>Back to Overview</span>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }

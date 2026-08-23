@@ -38,6 +38,10 @@ export default function SlugQuizLandingPage() {
   const quiz = matchQuizBySlugOrId(quizzes, slug) || directQuiz;
   const quizRounds = quiz ? rounds.filter((r) => r.quiz_id === quiz.id).sort((a, b) => a.round_number - b.round_number) : [];
   const quizQuestions = quiz ? questions.filter((q) => q.quiz_id === quiz.id) : [];
+  const existingCompletedEntry = entries.find(
+    (e) => e.quiz_id === quiz?.id && (currentUser ? e.user_id === currentUser.id : false) && e.status === 'submitted'
+  );
+  const disallowRetries = quiz && quiz.allow_retries !== true;
 
   const handleShareOrInvite = () => {
     if (typeof window === 'undefined') return;
@@ -176,14 +180,25 @@ export default function SlugQuizLandingPage() {
 
           {/* Action CTAs */}
           <div className="pt-6 flex flex-wrap items-center gap-4">
-            <Link
-              href={`/${slug}/play${activeRound ? `?roundId=${activeRound.id}` : ''}`}
-              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-sm shadow-xl shadow-[#e05a38]/25 transition-all hover:scale-105"
-            >
-              <Zap className="w-4 h-4" />
-              {activeRound ? `Enter Arena: ${activeRound.title}` : 'Enter Competition Arena'}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
+            {currentUser && existingCompletedEntry && disallowRetries ? (
+              <Link
+                href={`/${slug}/results?entryId=${existingCompletedEntry.id}`}
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#15803d] hover:bg-[#166534] text-white font-bold text-sm shadow-xl shadow-[#15803d]/25 transition-all hover:scale-105"
+              >
+                <Trophy className="w-4 h-4" />
+                <span>View Your Results & Answers ({existingCompletedEntry.score} pts)</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            ) : (
+              <Link
+                href={`/${slug}/play${activeRound ? `?roundId=${activeRound.id}` : ''}`}
+                className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-sm shadow-xl shadow-[#e05a38]/25 transition-all hover:scale-105"
+              >
+                <Zap className="w-4 h-4" />
+                {activeRound ? `Enter Arena: ${activeRound.title}` : 'Enter Competition Arena'}
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            )}
 
             {quiz.enable_referral_bonus ? (
               <button

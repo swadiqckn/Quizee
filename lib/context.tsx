@@ -752,6 +752,22 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   }) => {
     const targetQuiz = quizzes.find((q) => q.id === quizId);
     const targetRound = rounds.find((r) => r.id === roundId);
+
+    // If retries are disallowed, check if user already submitted
+    if (targetQuiz && targetQuiz.allow_retries !== true && currentUser) {
+      const existing = entries.find(
+        (e) => e.quiz_id === quizId && e.user_id === currentUser.id && e.status === 'submitted'
+      );
+      if (existing) {
+        return {
+          entry: existing,
+          score: existing.score,
+          qualified: existing.qualified_for_next_round,
+          totalCorrect: existing.total_correct,
+        };
+      }
+    }
+
     const strategy: ScoringStrategy = targetQuiz?.scoring_strategy || 'fixed';
 
     let calculatedScore = 0;
