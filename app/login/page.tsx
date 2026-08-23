@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Trophy, User, Lock, ArrowRight, Sparkles, CheckCircle2, AlertCircle, Shield, Users } from 'lucide-react';
+import { Trophy, User, Lock, ArrowRight, Sparkles, CheckCircle2, AlertCircle, Shield, Building2 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 
 export default function LoginPage() {
@@ -47,22 +47,40 @@ export default function LoginPage() {
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center mx-auto text-white shadow-xl shadow-indigo-600/25">
-            <Trophy className="w-6 h-6" />
+          {/* Logo Blocks */}
+          <div className="flex items-center justify-center gap-1 mb-3">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+              Q
+            </span>
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+              u
+            </span>
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+              i
+            </span>
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+              z
+            </span>
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+              e
+            </span>
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+              e
+            </span>
           </div>
-          <h1 className="text-2xl font-black text-white">Sign In to Quizee</h1>
-          <p className="text-xs text-slate-400">
+          <h1 className="text-2xl font-black text-slate-900">Sign In to Quizee</h1>
+          <p className="text-xs text-slate-500">
             Sign in with Google or your username & password credentials.
           </p>
         </div>
 
-        <div className="p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
+        <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-xl space-y-6">
           {/* Google Auth Option */}
           <div className="space-y-3">
             <button
               onClick={() => handleGoogleLogin('participant')}
               type="button"
-              className="w-full py-3 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs shadow-md transition flex items-center justify-center gap-2.5 hover:scale-[1.02]"
+              className="w-full py-3.5 px-4 rounded-2xl bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-900 font-bold text-xs shadow-sm transition flex items-center justify-center gap-2.5 hover:scale-[1.01]"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -88,27 +106,27 @@ export default function LoginPage() {
             <button
               onClick={() => handleGoogleLogin('admin')}
               type="button"
-              className="w-full py-2.5 px-4 rounded-xl bg-indigo-950/40 hover:bg-indigo-900/40 border border-indigo-500/30 text-indigo-300 font-bold text-xs transition flex items-center justify-center gap-2"
+              className="w-full py-2.5 px-4 rounded-2xl bg-[#fff0ea] hover:bg-[#ffe5dc] border border-[#ffd8cb] text-[#c2411d] font-bold text-xs transition flex items-center justify-center gap-2"
             >
-              <Shield className="w-3.5 h-3.5 text-indigo-400" />
+              <Shield className="w-3.5 h-3.5 text-[#e05a38]" />
               <span>Organizer / Admin Sign In (Google)</span>
             </button>
           </div>
 
           <div className="relative flex items-center justify-center">
-            <div className="border-t border-slate-800 w-full"></div>
-            <span className="bg-slate-900 px-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wider shrink-0">
-              Or Existing Account (Username)
+            <div className="border-t border-[#ebdcd1] w-full"></div>
+            <span className="bg-white px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
+              Or Username Login
             </span>
-            <div className="border-t border-slate-800 w-full"></div>
+            <div className="border-t border-[#ebdcd1] w-full"></div>
           </div>
 
           {/* Username & Password Form */}
           <form onSubmit={handleCredentialsLogin} className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Username</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Username</label>
               <div className="relative">
-                <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
@@ -118,28 +136,28 @@ export default function LoginPage() {
                     setUsername(e.target.value);
                     setError('');
                   }}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 font-mono"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38] font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Password</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Password</label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="password"
                   required
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
                 />
               </div>
             </div>
 
             {error && (
-              <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
               </div>
@@ -147,17 +165,17 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/25 transition flex items-center justify-center gap-2"
+              className="w-full py-3.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition flex items-center justify-center gap-2"
             >
               <span>Sign In with Password</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          <div className="pt-2 text-center text-xs text-slate-400">
+          <div className="pt-2 text-center text-xs text-slate-500">
             Want to host competitions?{' '}
-            <Link href="/register" className="text-indigo-400 hover:underline font-semibold">
-              Create Admin Account
+            <Link href="/register" className="text-[#e05a38] hover:underline font-bold">
+              Register Organization
             </Link>
           </div>
         </div>

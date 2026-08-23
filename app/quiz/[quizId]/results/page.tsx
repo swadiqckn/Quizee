@@ -42,8 +42,8 @@ function QuizResultsContent() {
   useEffect(() => {
     if (entry?.qualified_for_next_round || (entry && entry.score > 0)) {
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 90,
+        spread: 80,
         origin: { y: 0.6 },
       });
     }
@@ -60,9 +60,9 @@ function QuizResultsContent() {
 
   if (!quiz || !entry) {
     return (
-      <div className="max-w-xl mx-auto py-20 text-center text-white">
+      <div className="max-w-xl mx-auto py-20 text-center text-slate-900 font-bold">
         <p>Results not found.</p>
-        <Link href="/explore" className="text-indigo-400 text-xs mt-2 block">
+        <Link href="/explore" className="text-[#e05a38] text-xs mt-2 block hover:underline">
           Back to Explore
         </Link>
       </div>
@@ -79,22 +79,20 @@ function QuizResultsContent() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Celebration Header Card */}
-      <div className="p-8 sm:p-10 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-6 shadow-2xl relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_0%,rgba(99,102,241,0.2),rgba(255,255,255,0))] pointer-events-none"></div>
-
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 to-indigo-600 flex items-center justify-center mx-auto shadow-xl shadow-indigo-600/30">
-          <Trophy className="w-8 h-8 text-white" />
+      <div className="p-8 sm:p-10 rounded-3xl bg-white border border-[#ebdcd1] text-center space-y-6 shadow-xl relative overflow-hidden">
+        <div className="w-16 h-16 rounded-2xl bg-[#fff0ea] border border-[#ffd8cb] flex items-center justify-center mx-auto shadow-sm">
+          <Trophy className="w-8 h-8 text-[#e05a38]" />
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-3xl font-extrabold text-white">
+          <h1 className="text-3xl font-black text-slate-900">
             {entry.qualified_for_next_round
               ? '🎉 Qualification Achieved!'
               : entry.score > 0
               ? 'Quiz Completed!'
               : 'Attempt Submitted'}
           </h1>
-          <p className="text-sm text-slate-400 max-w-md mx-auto">
+          <p className="text-sm text-slate-500 max-w-md mx-auto font-medium">
             {quiz.title} {round ? `• ${round.title}` : ''}
           </p>
         </div>
@@ -102,22 +100,22 @@ function QuizResultsContent() {
         {/* Tournament Qualification Status Banner */}
         {quiz.quiz_type === 'tournament' && (
           <div
-            className={`p-4 rounded-2xl border max-w-lg mx-auto text-left flex items-start gap-3.5 ${
+            className={`p-5 rounded-2xl border-2 max-w-lg mx-auto text-left flex items-start gap-3.5 ${
               entry.qualified_for_next_round
-                ? 'bg-emerald-950/40 border-emerald-500/30 text-emerald-300'
-                : 'bg-amber-950/40 border-amber-500/30 text-amber-300'
+                ? 'bg-[#f0fdf4] border-[#10b981] text-[#15803d]'
+                : 'bg-[#fffbeb] border-[#f59e0b] text-[#b45309]'
             }`}
           >
             {entry.qualified_for_next_round ? (
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0" />
+              <CheckCircle2 className="w-5 h-5 text-[#10b981] mt-0.5 shrink-0" />
             ) : (
-              <XCircle className="w-5 h-5 text-amber-400 mt-0.5 shrink-0" />
+              <XCircle className="w-5 h-5 text-[#f59e0b] mt-0.5 shrink-0" />
             )}
             <div className="space-y-1">
-              <p className="text-xs font-bold uppercase tracking-wider">
+              <p className="text-xs font-black uppercase tracking-wider">
                 {entry.qualified_for_next_round ? 'Qualified for Next Level' : 'Did Not Meet Cut-Off'}
               </p>
-              <p className="text-xs opacity-90 leading-relaxed">
+              <p className="text-xs opacity-90 leading-relaxed font-semibold">
                 {entry.qualified_for_next_round
                   ? nextRound
                     ? `You have unlocked ${nextRound.title}. It begins ${formatDate(nextRound.scheduled_start_time)}.`
@@ -130,84 +128,61 @@ function QuizResultsContent() {
 
         {/* Score & Metrics Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl mx-auto pt-2">
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
-            <p className="text-[11px] text-slate-500 font-medium">Final Score</p>
-            <p className="text-2xl font-black text-indigo-400">{entry.score} pts</p>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <p className="text-[11px] text-slate-500 font-bold">Final Score</p>
+            <p className="text-2xl font-black text-[#e05a38]">{entry.score} pts</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
-            <p className="text-[11px] text-slate-500 font-medium">Correct Answers</p>
-            <p className="text-2xl font-black text-emerald-400">{entry.total_correct}</p>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <p className="text-[11px] text-slate-500 font-bold">Correct Answers</p>
+            <p className="text-2xl font-black text-[#15803d]">{entry.total_correct}</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
-            <p className="text-[11px] text-slate-500 font-medium">Total Speed</p>
-            <p className="text-2xl font-black text-white">{formatTimeMs(entry.total_time_taken_ms)}</p>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <p className="text-[11px] text-slate-500 font-bold">Total Speed</p>
+            <p className="text-2xl font-black text-slate-900">{formatTimeMs(entry.total_time_taken_ms)}</p>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800/80">
-            <p className="text-[11px] text-slate-500 font-medium">Arena Rank</p>
-            <p className="text-2xl font-black text-amber-400">#{userRank || 1}</p>
+          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+            <p className="text-[11px] text-slate-500 font-bold">Arena Rank</p>
+            <p className="text-2xl font-black text-[#b45309]">#{userRank || 1}</p>
           </div>
         </div>
 
-        {/* CTAs */}
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-          {nextRound && entry.qualified_for_next_round && (
-            <Link
-              href={`/quiz/${quiz.id}/play?roundId=${nextRound.id}`}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/30 transition hover:scale-105"
-            >
-              Proceed to {nextRound.title}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          )}
-
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-slate-100">
           <Link
-            href={`/quiz/${quiz.id}`}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs transition"
+            href={`/quiz/${quizId}/play`}
+            className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-black shadow-lg shadow-[#e05a38]/20 transition flex items-center gap-2"
           >
             <Repeat className="w-3.5 h-3.5" />
-            Back to Overview
+            Try Again
           </Link>
+
+          <button
+            onClick={copyReferral}
+            className="px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-black shadow-sm transition flex items-center gap-2"
+          >
+            <Share2 className="w-3.5 h-3.5 text-[#e05a38]" />
+            {copiedLink ? 'Link Copied!' : 'Share Referral & Earn Bonus'}
+          </button>
         </div>
       </div>
 
-      {/* Referral Booster Card */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-pink-950/30 via-slate-900 to-indigo-950/30 border border-pink-500/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 shrink-0">
-            <Gift className="w-6 h-6" />
-          </div>
+      {/* Live Standings Leaderboard */}
+      <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div>
-            <h3 className="text-sm font-bold text-white">Boost Your Standing with Referrals</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Invite friends to this tournament and earn{' '}
-              <strong className="text-pink-400">+{quiz.referral_bonus_points || 10} bonus points</strong> for each referee!
-            </p>
+            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <Award className="w-5 h-5 text-amber-500" />
+              Round Leaderboard Standings
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">Ranked by points (speed decay) and completion duration</p>
           </div>
+          <span className="text-xs font-bold text-slate-500">{roundEntries.length} entries recorded</span>
         </div>
 
-        <button
-          onClick={copyReferral}
-          className="px-4 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold transition flex items-center gap-2 shrink-0 shadow-md shadow-pink-600/20"
-        >
-          <Share2 className="w-3.5 h-3.5" />
-          {copiedLink ? 'Invite Link Copied!' : 'Share Referral Link'}
-        </button>
-      </div>
-
-      {/* Live Round Leaderboard */}
-      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Award className="w-4 h-4 text-amber-400" />
-            Live Arena Leaderboard
-          </h2>
-          <span className="text-xs text-slate-400">{roundEntries.length} entries recorded</span>
-        </div>
-
-        <div className="divide-y divide-slate-800/60">
+        <div className="divide-y divide-slate-100">
           {roundEntries.map((e, index) => {
             const isMe = currentUser ? e.user_id === currentUser.id : false;
             const rank = index + 1;
@@ -215,44 +190,42 @@ function QuizResultsContent() {
             return (
               <div
                 key={e.id}
-                className={`py-3.5 px-3 rounded-xl flex items-center justify-between gap-4 transition ${
-                  isMe ? 'bg-indigo-600/10 border border-indigo-500/20' : 'hover:bg-slate-950/40'
+                className={`py-4 px-4 rounded-2xl flex items-center justify-between gap-4 transition ${
+                  isMe ? 'bg-[#fff0ea] border border-[#ffd8cb]' : 'hover:bg-slate-50'
                 }`}
               >
                 <div className="flex items-center gap-3.5">
                   <div
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs ${
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${
                       rank === 1
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        ? 'bg-[#fef3c7] text-[#b45309] border border-[#fde68a]'
                         : rank === 2
-                        ? 'bg-slate-300/20 text-slate-200 border border-slate-300/30'
+                        ? 'bg-slate-200 text-slate-700 border border-slate-300'
                         : rank === 3
-                        ? 'bg-amber-700/20 text-amber-600 border border-amber-700/30'
-                        : 'text-slate-500 font-mono'
+                        ? 'bg-[#fed7aa] text-[#c2411d] border border-[#fdba74]'
+                        : 'text-slate-400 font-mono font-bold'
                     }`}
                   >
                     {rank}
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-white flex items-center gap-1.5">
-                      {e.user?.full_name || `@${e.user?.username}` || 'Anonymous Competitor'}
-                      {isMe && (
-                        <span className="px-1.5 py-0.2 rounded text-[9px] bg-indigo-500 text-white font-bold">
-                          YOU
-                        </span>
-                      )}
+                    <p className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                      <span>{e.user?.full_name || e.user?.username || 'Contestant'}</span>
+                      {isMe && <span className="text-[10px] text-[#e05a38] font-bold">(You)</span>}
                     </p>
-                    <p className="text-[10px] text-slate-400">
-                      Time: {formatTimeMs(e.total_time_taken_ms)} • {e.total_correct} Correct
+                    <p className="text-[10px] text-slate-400 font-medium">
+                      {e.total_correct} correct • {formatTimeMs(e.total_time_taken_ms)} speed
                     </p>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <p className="text-sm font-bold text-indigo-400">{e.score} pts</p>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-black text-[#e05a38] font-mono">{e.score} pts</span>
                   {e.qualified_for_next_round && (
-                    <span className="text-[10px] text-emerald-400 font-medium">Qualified</span>
+                    <span className="px-3 py-1 rounded-xl bg-[#dcfce7] text-[#15803d] text-[10px] font-black">
+                      Qualified
+                    </span>
                   )}
                 </div>
               </div>
@@ -266,7 +239,7 @@ function QuizResultsContent() {
 
 export default function QuizResultsPage() {
   return (
-    <Suspense fallback={<div className="max-w-xl mx-auto py-20 text-center text-slate-400 text-xs">Loading results...</div>}>
+    <Suspense fallback={<div className="max-w-xl mx-auto py-20 text-center text-slate-400 text-xs">Loading Results...</div>}>
       <QuizResultsContent />
     </Suspense>
   );

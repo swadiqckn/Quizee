@@ -53,7 +53,7 @@ export default function ManageQuestionsPage() {
 
   if (!quiz) {
     return (
-      <div className="max-w-4xl mx-auto py-20 text-center text-white">
+      <div className="max-w-4xl mx-auto py-20 text-center text-slate-900 font-bold">
         <p>Quiz not found.</p>
       </div>
     );
@@ -153,7 +153,7 @@ export default function ManageQuestionsPage() {
       {/* Back Link */}
       <Link
         href="/admin/dashboard"
-        className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Organizer Dashboard
@@ -162,16 +162,16 @@ export default function ManageQuestionsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider">
+          <span className="text-xs font-black text-[#e05a38] uppercase tracking-wider">
             {quiz.title} • Questions Manager
           </span>
-          <h1 className="text-3xl font-extrabold text-white mt-1">Question Bank & Media</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">Question Bank & Media</h1>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             href={`/quiz/${quiz.id}`}
-            className="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-300 transition flex items-center gap-1.5"
+            className="px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-[#ebdcd1] text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5"
           >
             <Eye className="w-3.5 h-3.5" />
             Preview Quiz
@@ -183,7 +183,7 @@ export default function ManageQuestionsPage() {
                 resetForm();
                 setIsAddingNew(true);
               }}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-lg shadow-[#e05a38]/20 transition"
             >
               <Plus className="w-4 h-4" />
               Add Question
@@ -197,10 +197,10 @@ export default function ManageQuestionsPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setSelectedRoundFilter('all')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
+            className={`px-4 py-2 rounded-2xl text-xs font-black transition ${
               selectedRoundFilter === 'all'
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                ? 'bg-[#e05a38] text-white shadow-sm'
+                : 'bg-white border border-[#ebdcd1] text-slate-700 hover:text-slate-950'
             }`}
           >
             All Rounds ({quizQuestions.length})
@@ -209,10 +209,10 @@ export default function ManageQuestionsPage() {
             <button
               key={r.id}
               onClick={() => setSelectedRoundFilter(r.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-medium transition ${
+              className={`px-4 py-2 rounded-2xl text-xs font-black transition ${
                 selectedRoundFilter === r.id
-                  ? 'bg-purple-600 text-white'
-                  : 'bg-slate-900 border border-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-white border border-[#ebdcd1] text-slate-700 hover:text-slate-950'
               }`}
             >
               {r.title} ({quizQuestions.filter((q) => q.round_id === r.id).length})
@@ -221,15 +221,15 @@ export default function ManageQuestionsPage() {
         </div>
       )}
 
-      {/* Question Form Modal / Inline Box */}
+      {/* Question Form */}
       {isAddingNew && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-indigo-500/30 space-y-6 shadow-2xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
+        <div className="p-8 rounded-3xl bg-white border-2 border-[#e05a38] space-y-6 shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#e05a38]" />
               {editingQuestionId ? 'Edit Question' : 'Add New Question'}
             </h2>
-            <button onClick={resetForm} className="text-xs text-slate-400 hover:text-white">
+            <button onClick={resetForm} className="text-xs font-bold text-slate-500 hover:text-slate-900">
               Cancel
             </button>
           </div>
@@ -238,13 +238,13 @@ export default function ManageQuestionsPage() {
             {/* Round selection if Tournament */}
             {quiz.quiz_type === 'tournament' && (
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
                   Assign to Tournament Level / Round *
                 </label>
                 <select
                   value={targetRoundId}
                   onChange={(e) => setTargetRoundId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
                 >
                   {quizRounds.map((r) => (
                     <option key={r.id} value={r.id}>
@@ -257,21 +257,21 @@ export default function ManageQuestionsPage() {
 
             {/* Question Text */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Question Prompt *</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Question Prompt *</label>
               <textarea
                 rows={3}
                 required
                 placeholder="Type the question content here..."
                 value={questionText}
                 onChange={(e) => setQuestionText(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
               />
             </div>
 
             {/* Attachment */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">
                   Attachment URL (Image / Diagram / Document)
                 </label>
                 <input
@@ -279,20 +279,21 @@ export default function ManageQuestionsPage() {
                   placeholder="https://images.unsplash.com/photo-..."
                   value={attachmentUrl}
                   onChange={(e) => setAttachmentUrl(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Attachment Type</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Attachment Type</label>
                 <select
                   value={attachmentType}
-                  onChange={(e) => setAttachmentType(e.target.value as AttachmentType)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                  onChange={(e) => setAttachmentType(e.target.value as any)}
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
                 >
                   <option value="image">Image / Diagram</option>
                   <option value="audio">Audio Clip</option>
-                  <option value="document">Document / PDF</option>
+                  <option value="document">PDF / Document</option>
+                  <option value="none">No Attachment</option>
                 </select>
               </div>
             </div>
@@ -300,105 +301,111 @@ export default function ManageQuestionsPage() {
             {/* Points & Timer */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Points Value</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Base Points</label>
                 <input
                   type="number"
                   value={points}
                   onChange={(e) => setPoints(Number(e.target.value))}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Time Limit (Seconds)</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Time Limit (Seconds)</label>
                 <input
                   type="number"
                   value={timeLimitSec}
                   onChange={(e) => setTimeLimitSec(Number(e.target.value))}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
                 />
               </div>
             </div>
 
-            {/* Options Builder */}
+            {/* MCQ Options List */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-white uppercase tracking-wider">
-                  Multiple Choice Options (Select Correct Answer)
+                <label className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                  Options & Correct Answer Selection
                 </label>
                 <button
                   type="button"
                   onClick={handleAddOption}
-                  className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                  className="text-xs font-black text-[#e05a38] hover:underline flex items-center gap-1"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add Choice
+                  <Plus className="w-3.5 h-3.5" /> Add Option
                 </button>
               </div>
 
               <div className="space-y-2.5">
-                {options.map((opt, idx) => (
-                  <div key={opt.id} className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleSetCorrectOption(opt.id)}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition ${
-                        opt.is_correct
-                          ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-950 border border-slate-800 text-slate-400 hover:border-slate-700'
-                      }`}
-                    >
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      {opt.is_correct ? 'Correct' : 'Mark Correct'}
-                    </button>
-
-                    <input
-                      type="text"
-                      placeholder={`Option ${String.fromCharCode(65 + idx)} text`}
-                      value={opt.text}
-                      onChange={(e) => handleOptionTextChange(opt.id, e.target.value)}
-                      className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
-                    />
-
-                    {options.length > 2 && (
+                {options.map((opt, idx) => {
+                  const letter = String.fromCharCode(65 + idx);
+                  return (
+                    <div key={opt.id} className="flex items-center gap-2.5">
                       <button
                         type="button"
-                        onClick={() => handleRemoveOption(opt.id)}
-                        className="p-2 text-slate-500 hover:text-rose-400 transition"
+                        onClick={() => handleSetCorrectOption(opt.id)}
+                        className={`w-9 h-9 rounded-2xl font-black text-xs flex items-center justify-center shrink-0 transition ${
+                          opt.is_correct
+                            ? 'bg-[#15803d] text-white shadow-md'
+                            : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
+                        }`}
+                        title={opt.is_correct ? 'Correct Option' : 'Click to set as correct'}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {letter}
                       </button>
-                    )}
-                  </div>
-                ))}
+
+                      <input
+                        type="text"
+                        placeholder={`Option ${letter} text...`}
+                        value={opt.text}
+                        onChange={(e) => handleOptionTextChange(opt.id, e.target.value)}
+                        className={`flex-1 px-4 py-2.5 rounded-2xl border text-xs text-slate-900 focus:outline-none ${
+                          opt.is_correct
+                            ? 'bg-[#f0fdf4] border-[#bbf7d0]'
+                            : 'bg-slate-50 border-slate-200'
+                        }`}
+                      />
+
+                      {options.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveOption(opt.id)}
+                          className="p-2 text-slate-400 hover:text-rose-600 transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             {/* Explanation */}
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                Explanation (Shown on result review)
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                Explanation (Shown on result breakdown)
               </label>
               <textarea
                 rows={2}
-                placeholder="Explain why the correct answer is right..."
+                placeholder="Explain why this answer is correct..."
                 value={explanation}
                 onChange={(e) => setExplanation(e.target.value)}
-                className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none"
+                className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
               />
             </div>
 
-            {/* Form Actions */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
               <button
                 type="button"
                 onClick={resetForm}
-                className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-xs font-semibold text-slate-400"
+                className="px-5 py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/20"
+                className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-lg shadow-[#e05a38]/20 transition"
               >
                 {editingQuestionId ? 'Update Question' : 'Save Question'}
               </button>
@@ -407,74 +414,64 @@ export default function ManageQuestionsPage() {
         </div>
       )}
 
-      {/* Existing Questions List */}
+      {/* Questions List */}
       <div className="space-y-4">
         {filteredQuestions.length === 0 ? (
-          <div className="text-center py-16 bg-slate-900/40 rounded-3xl border border-slate-800/60">
-            <HelpCircle className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-            <h3 className="text-sm font-bold text-white">No Questions Found</h3>
-            <p className="text-xs text-slate-400 mt-1">Click "Add Question" above to add questions with MCQ options.</p>
+          <div className="text-center py-16 bg-white rounded-3xl border border-[#ebdcd1] shadow-sm space-y-3">
+            <HelpCircle className="w-12 h-12 text-slate-300 mx-auto" />
+            <h2 className="text-base font-black text-slate-900">No questions found</h2>
+            <p className="text-xs text-slate-500 font-medium">Click "Add Question" above to populate your quiz.</p>
           </div>
         ) : (
           filteredQuestions.map((q, idx) => (
             <div
               key={q.id}
-              className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition space-y-4 shadow-lg"
+              className="p-6 rounded-3xl bg-white border border-[#ebdcd1] shadow-sm space-y-4 hover:shadow-md transition"
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-xs font-bold text-indigo-300">
-                    Q{idx + 1}
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-xl bg-[#fff0ea] text-[#e05a38] text-xs font-black flex items-center justify-center">
+                      #{idx + 1}
+                    </span>
+                    <span className="text-xs font-black text-slate-900">{q.points} Points</span>
+                    <span className="text-xs text-slate-400">•</span>
+                    <span className="text-xs text-slate-500 font-bold">{q.time_limit_sec}s timer</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-bold text-white">{q.question_text}</p>
-                    <div className="flex items-center gap-3 text-[11px] text-slate-400 mt-1">
-                      <span>{q.points} pts</span>
-                      <span>•</span>
-                      <span>{q.time_limit_sec || 15}s limit</span>
-                      {q.attachment_url && (
-                        <>
-                          <span>•</span>
-                          <span className="text-indigo-400 flex items-center gap-1">
-                            <ImageIcon className="w-3 h-3" /> Media Attached
-                          </span>
-                        </>
-                      )}
-                    </div>
-                  </div>
+                  <h3 className="text-base font-black text-slate-900 leading-relaxed">{q.question_text}</h3>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => startEdit(q)}
-                    className="p-2 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 text-xs transition"
+                    className="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 transition"
+                    title="Edit question"
                   >
-                    <Edit2 className="w-3.5 h-3.5" />
+                    <Edit2 className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => deleteQuestion(q.id)}
-                    className="p-2 rounded-lg bg-slate-950 hover:bg-rose-950/40 text-rose-400 text-xs transition"
+                    className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition"
+                    title="Delete question"
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
 
-              {/* Options Grid */}
+              {/* Options Pills */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
-                {q.options.map((opt, optIdx) => (
+                {q.options.map((opt) => (
                   <div
                     key={opt.id}
-                    className={`p-2.5 rounded-xl border text-xs flex items-center justify-between ${
+                    className={`p-3 rounded-2xl text-xs flex items-center justify-between font-bold ${
                       opt.is_correct
-                        ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300 font-semibold'
-                        : 'bg-slate-950/60 border-slate-800/80 text-slate-400'
+                        ? 'bg-[#f0fdf4] border border-[#bbf7d0] text-[#15803d]'
+                        : 'bg-slate-50 border border-slate-200 text-slate-700'
                     }`}
                   >
-                    <span>
-                      {String.fromCharCode(65 + optIdx)}. {opt.text}
-                    </span>
-                    {opt.is_correct && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />}
+                    <span>{opt.text}</span>
+                    {opt.is_correct && <CheckCircle2 className="w-4 h-4 text-[#15803d] shrink-0" />}
                   </div>
                 ))}
               </div>

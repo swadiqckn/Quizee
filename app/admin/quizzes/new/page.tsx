@@ -133,7 +133,7 @@ export default function NewQuizPage() {
       {/* Back link */}
       <Link
         href="/admin/dashboard"
-        className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to Dashboard
@@ -141,16 +141,16 @@ export default function NewQuizPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white">Create New Competition</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900">Create New Competition</h1>
+          <p className="text-sm text-slate-600 mt-1">
             Configure single competitions or multi-level tournaments with automated scheduling & dynamic scoring.
           </p>
         </div>
 
         {/* Plan Pill */}
-        <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-xs">
-          <p className="text-slate-400">Current Plan: <strong className="text-white uppercase">{currentPlan}</strong></p>
-          <p className="text-[11px] text-slate-500">
+        <div className="p-3 rounded-2xl bg-white border border-[#ebdcd1] text-xs shadow-sm">
+          <p className="text-slate-500 font-medium">Current Plan: <strong className="text-slate-900 uppercase font-black">{currentPlan}</strong></p>
+          <p className="text-[11px] text-slate-400 font-bold">
             {currentPlan === 'free' ? 'Max 100 participants • 2 quizzes/mo' : 'Unlimited'}
           </p>
         </div>
@@ -158,12 +158,12 @@ export default function NewQuizPage() {
 
       {/* Plan Limit Exceeded Alert */}
       {!quota.allowed && (
-        <div className="p-6 rounded-3xl bg-rose-950/40 border border-rose-500/40 space-y-4 shadow-xl">
+        <div className="p-6 rounded-3xl bg-rose-50 border-2 border-rose-200 space-y-4 shadow-sm">
           <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
+            <AlertCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-base font-bold text-white">Monthly Quiz Limit Reached (Free Plan)</h3>
-              <p className="text-xs text-slate-300 mt-1 leading-relaxed">
+              <h3 className="text-base font-black text-rose-900">Monthly Quiz Limit Reached (Free Plan)</h3>
+              <p className="text-xs text-rose-700 mt-1 leading-relaxed font-medium">
                 The Free Starter Plan allows a maximum of <strong>2 quizzes per month</strong>. You have already created 2 quizzes this month.
               </p>
             </div>
@@ -175,14 +175,14 @@ export default function NewQuizPage() {
                 upgradeActiveOrgPlan('plus');
                 setErrorMessage(null);
               }}
-              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-indigo-600 hover:from-amber-400 hover:to-indigo-500 text-white font-bold text-xs shadow-lg transition flex items-center gap-2"
+              className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-md transition flex items-center gap-2"
             >
               <Crown className="w-4 h-4" />
               Upgrade to Plus Plan ($29/mo)
             </button>
             <Link
               href="/admin/billing"
-              className="text-xs text-slate-300 hover:underline px-3 py-2"
+              className="text-xs text-slate-700 font-bold hover:underline px-3 py-2"
             >
               View Plan Comparisons
             </Link>
@@ -191,7 +191,7 @@ export default function NewQuizPage() {
       )}
 
       {errorMessage && (
-        <div className="p-4 rounded-2xl bg-rose-950/40 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-bold">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMessage}</span>
         </div>
@@ -199,53 +199,53 @@ export default function NewQuizPage() {
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Section 1: Basic Information */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-indigo-400" />
+        <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
+          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+            <Trophy className="w-5 h-5 text-[#e05a38]" />
             1. Basic Information
           </h2>
 
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Competition Title *</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Competition Title *</label>
               <input
                 type="text"
                 required
                 placeholder="e.g. AI & Web3 National Championship 2026"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Description</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Description</label>
               <textarea
                 rows={3}
                 placeholder="Describe rules, eligibility, prizes, or topic coverage..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Cover Banner Image URL</label>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Cover Banner Image URL</label>
               <input
                 type="url"
                 placeholder="https://images.unsplash.com/..."
                 value={bannerUrl}
                 onChange={(e) => setBannerUrl(e.target.value)}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
               />
             </div>
           </div>
         </div>
 
         {/* Section 2: Competition Format & Tournament Progression */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Layers className="w-5 h-5 text-purple-400" />
+        <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
+          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+            <Layers className="w-5 h-5 text-purple-600" />
             2. Competition Format & Progression
           </h2>
 
@@ -253,18 +253,18 @@ export default function NewQuizPage() {
             <button
               type="button"
               onClick={() => setQuizType('tournament')}
-              className={`p-5 rounded-2xl border text-left transition ${
+              className={`p-6 rounded-2xl border-2 text-left transition ${
                 quizType === 'tournament'
-                  ? 'bg-purple-600/10 border-purple-500 text-white shadow-lg shadow-purple-500/10'
-                  : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-[#f5f3ff] border-[#8b5cf6] text-slate-900 shadow-md'
+                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-[#faf5ff]'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <Layers className="w-5 h-5 text-purple-400" />
-                {quizType === 'tournament' && <CheckCircle2 className="w-4 h-4 text-purple-400" />}
+                <Layers className="w-5 h-5 text-purple-600" />
+                {quizType === 'tournament' && <CheckCircle2 className="w-4 h-4 text-purple-600" />}
               </div>
-              <h3 className="font-bold text-sm text-white">Multi-Round Tournament</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="font-black text-sm text-slate-900">Multi-Round Tournament</h3>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
                 Multi-level tournament (e.g. Prelims $\to$ Finals) with qualification criteria.
               </p>
             </button>
@@ -272,18 +272,18 @@ export default function NewQuizPage() {
             <button
               type="button"
               onClick={() => setQuizType('single')}
-              className={`p-5 rounded-2xl border text-left transition ${
+              className={`p-6 rounded-2xl border-2 text-left transition ${
                 quizType === 'single'
-                  ? 'bg-blue-600/10 border-blue-500 text-white shadow-lg shadow-blue-500/10'
-                  : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-[#eff6ff] border-[#3b82f6] text-slate-900 shadow-md'
+                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-[#eff6ff]'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <Zap className="w-5 h-5 text-blue-400" />
-                {quizType === 'single' && <CheckCircle2 className="w-4 h-4 text-blue-400" />}
+                <Zap className="w-5 h-5 text-blue-600" />
+                {quizType === 'single' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
               </div>
-              <h3 className="font-bold text-sm text-white">Single Competition</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="font-black text-sm text-slate-900">Single Competition</h3>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
                 Standalone single-round quiz challenge with instant final leaderboard.
               </p>
             </button>
@@ -291,21 +291,21 @@ export default function NewQuizPage() {
 
           {/* If Tournament: Progression Mode & Initial Rounds */}
           {quizType === 'tournament' && (
-            <div className="pt-4 border-t border-slate-800 space-y-6">
+            <div className="pt-4 border-t border-slate-100 space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300 block">Tournament Progression Mode</label>
+                <label className="text-xs font-bold text-slate-700 block">Tournament Progression Mode</label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setProgressionMode('automatic')}
-                    className={`p-4 rounded-xl border text-left text-xs transition ${
+                    className={`p-4 rounded-2xl border-2 text-left text-xs transition ${
                       progressionMode === 'automatic'
-                        ? 'bg-indigo-600/15 border-indigo-500 text-indigo-200'
-                        : 'bg-slate-950 border-slate-800 text-slate-400'
+                        ? 'bg-[#fff0ea] border-[#e05a38] text-slate-900'
+                        : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
-                    <p className="font-bold text-white mb-1">🕒 Automatic Progression (Scheduled)</p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="font-black text-slate-900 mb-1">🕒 Automatic Progression (Scheduled)</p>
+                    <p className="text-[11px] text-slate-500 font-medium">
                       Rounds automatically unlock at set date/time for qualified contestants.
                     </p>
                   </button>
@@ -313,14 +313,14 @@ export default function NewQuizPage() {
                   <button
                     type="button"
                     onClick={() => setProgressionMode('manual')}
-                    className={`p-4 rounded-xl border text-left text-xs transition ${
+                    className={`p-4 rounded-2xl border-2 text-left text-xs transition ${
                       progressionMode === 'manual'
-                        ? 'bg-indigo-600/15 border-indigo-500 text-indigo-200'
-                        : 'bg-slate-950 border-slate-800 text-slate-400'
+                        ? 'bg-[#fff0ea] border-[#e05a38] text-slate-900'
+                        : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
-                    <p className="font-bold text-white mb-1">🛡️ Manual Progression (Organizer Controlled)</p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="font-black text-slate-900 mb-1">🛡️ Manual Progression (Organizer Controlled)</p>
+                    <p className="text-[11px] text-slate-500 font-medium">
                       Organizer manually reviews and triggers next level qualification.
                     </p>
                   </button>
@@ -329,90 +329,90 @@ export default function NewQuizPage() {
 
               {/* Initial Round Setup */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
                   Initial Tournament Rounds & Qualification Criteria
                 </h3>
 
                 {/* Round 1 */}
-                <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-indigo-400">Level 1 (Prelims / Qualifier)</span>
-                    <span className="text-[11px] text-emerald-400">Active upon publish</span>
+                    <span className="text-xs font-black text-[#e05a38]">Level 1 (Prelims / Qualifier)</span>
+                    <span className="text-[11px] text-[#15803d] font-bold">Active upon publish</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">Round Title</label>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Round Title</label>
                       <input
                         type="text"
                         value={round1Title}
                         onChange={(e) => setRound1Title(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">Min Score to Qualify</label>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Min Score to Qualify</label>
                       <input
                         type="number"
                         value={round1MinScore}
                         onChange={(e) => setRound1MinScore(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">Min Correct Answers</label>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Min Correct Answers</label>
                       <input
                         type="number"
                         value={round1MinCorrect}
                         onChange={(e) => setRound1MinCorrect(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* Round 2 */}
-                <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3">
+                <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-purple-400">Level 2 (Grand Finals)</span>
-                    <span className="text-[11px] text-amber-400">Unlocks automatically</span>
+                    <span className="text-xs font-black text-purple-700">Level 2 (Grand Finals)</span>
+                    <span className="text-[11px] text-[#b45309] font-bold">Unlocks automatically</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                     <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">Round Title</label>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Round Title</label>
                       <input
                         type="text"
                         value={round2Title}
                         onChange={(e) => setRound2Title(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">Scheduled Start</label>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Scheduled Start</label>
                       <input
                         type="datetime-local"
                         value={round2Start}
                         onChange={(e) => setRound2Start(e.target.value)}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">Min Score</label>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Min Score</label>
                       <input
                         type="number"
                         value={round2MinScore}
                         onChange={(e) => setRound2MinScore(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold"
                       />
                     </div>
                     <div>
-                      <label className="text-[11px] text-slate-400 block mb-1">Min Correct</label>
+                      <label className="text-[11px] font-bold text-slate-600 block mb-1">Min Correct</label>
                       <input
                         type="number"
                         value={round2MinCorrect}
                         onChange={(e) => setRound2MinCorrect(Number(e.target.value))}
-                        className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white"
+                        className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold"
                       />
                     </div>
                   </div>
@@ -423,9 +423,9 @@ export default function NewQuizPage() {
         </div>
 
         {/* Section 3: Pointing & Scoring Criteria */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Zap className="w-5 h-5 text-amber-400" />
+        <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
+          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+            <Zap className="w-5 h-5 text-amber-500" />
             3. Pointing & Scoring Engine
           </h2>
 
@@ -433,18 +433,18 @@ export default function NewQuizPage() {
             <button
               type="button"
               onClick={() => setScoringStrategy('time_decay')}
-              className={`p-5 rounded-2xl border text-left transition ${
+              className={`p-6 rounded-2xl border-2 text-left transition ${
                 scoringStrategy === 'time_decay'
-                  ? 'bg-amber-600/10 border-amber-500 text-white shadow-lg shadow-amber-500/10'
-                  : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-[#fffbeb] border-[#f59e0b] text-slate-900 shadow-md'
+                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-[#fffbeb]'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <Clock className="w-5 h-5 text-amber-400" />
-                {scoringStrategy === 'time_decay' && <CheckCircle2 className="w-4 h-4 text-amber-400" />}
+                <Clock className="w-5 h-5 text-amber-500" />
+                {scoringStrategy === 'time_decay' && <CheckCircle2 className="w-4 h-4 text-amber-500" />}
               </div>
-              <h3 className="font-bold text-sm text-white">Time-Decay Dynamic Scoring</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="font-black text-sm text-slate-900">Time-Decay Dynamic Scoring</h3>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
                 Max points decrement continuously as question timer ticks down.
               </p>
             </button>
@@ -452,18 +452,18 @@ export default function NewQuizPage() {
             <button
               type="button"
               onClick={() => setScoringStrategy('fixed')}
-              className={`p-5 rounded-2xl border text-left transition ${
+              className={`p-6 rounded-2xl border-2 text-left transition ${
                 scoringStrategy === 'fixed'
-                  ? 'bg-indigo-600/10 border-indigo-500 text-white shadow-lg shadow-indigo-500/10'
-                  : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-white'
+                  ? 'bg-[#fff0ea] border-[#e05a38] text-slate-900 shadow-md'
+                  : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-[#fff0ea]'
               }`}
             >
               <div className="flex items-center justify-between mb-2">
-                <Zap className="w-5 h-5 text-indigo-400" />
-                {scoringStrategy === 'fixed' && <CheckCircle2 className="w-4 h-4 text-indigo-400" />}
+                <Zap className="w-5 h-5 text-[#e05a38]" />
+                {scoringStrategy === 'fixed' && <CheckCircle2 className="w-4 h-4 text-[#e05a38]" />}
               </div>
-              <h3 className="font-bold text-sm text-white">Fixed Pointing</h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <h3 className="font-black text-sm text-slate-900">Fixed Pointing</h3>
+              <p className="text-xs text-slate-500 mt-1 font-medium">
                 Constant points awarded for correct answers regardless of response speed.
               </p>
             </button>
@@ -471,51 +471,51 @@ export default function NewQuizPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">
                 Max / Base Points per Question
               </label>
               <input
                 type="number"
                 value={basePoints}
                 onChange={(e) => setBasePoints(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
               />
             </div>
 
             <div>
-              <label className="text-xs font-semibold text-slate-300 block mb-1.5">
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">
                 Question Time Limit (seconds)
               </label>
               <input
                 type="number"
                 value={timeLimitSec}
                 onChange={(e) => setTimeLimitSec(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-white focus:outline-none focus:border-indigo-500"
+                className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
               />
             </div>
           </div>
         </div>
 
         {/* Section 4: Randomization & Referral System */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Shuffle className="w-5 h-5 text-pink-400" />
+        <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
+          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+            <Shuffle className="w-5 h-5 text-pink-500" />
             4. Randomization & Referral Incentives
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Shuffling */}
-            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Anti-Cheat Randomization</h3>
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Anti-Cheat Randomization</h3>
               
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={shuffleOptions}
                   onChange={(e) => setShuffleOptions(e.target.checked)}
-                  className="w-4 h-4 rounded text-indigo-600 bg-slate-900 border-slate-800 focus:ring-0"
+                  className="w-4 h-4 rounded text-[#e05a38] border-slate-300 focus:ring-0"
                 />
-                <span className="text-xs text-slate-300">Shuffle MCQ Options (Default: On)</span>
+                <span className="text-xs font-bold text-slate-800">Shuffle MCQ Options (Default: On)</span>
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer">
@@ -523,34 +523,34 @@ export default function NewQuizPage() {
                   type="checkbox"
                   checked={shuffleQuestions}
                   onChange={(e) => setShuffleQuestions(e.target.checked)}
-                  className="w-4 h-4 rounded text-indigo-600 bg-slate-900 border-slate-800 focus:ring-0"
+                  className="w-4 h-4 rounded text-[#e05a38] border-slate-300 focus:ring-0"
                 />
-                <span className="text-xs text-slate-300">Shuffle Question Order per participant</span>
+                <span className="text-xs font-bold text-slate-800">Shuffle Question Order per participant</span>
               </label>
             </div>
 
             {/* Referral Settings */}
-            <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-3">
-              <h3 className="text-xs font-bold text-white uppercase tracking-wider">Referral Rewards</h3>
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Referral Rewards</h3>
 
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={enableReferralBonus}
                   onChange={(e) => setEnableReferralBonus(e.target.checked)}
-                  className="w-4 h-4 rounded text-pink-600 bg-slate-900 border-slate-800 focus:ring-0"
+                  className="w-4 h-4 rounded text-[#e05a38] border-slate-300 focus:ring-0"
                 />
-                <span className="text-xs text-slate-300">Award referral bonus points for invites</span>
+                <span className="text-xs font-bold text-slate-800">Award referral bonus points for invites</span>
               </label>
 
               {enableReferralBonus && (
                 <div className="pt-2">
-                  <label className="text-[11px] text-slate-400 block mb-1">Referral Bonus Points</label>
+                  <label className="text-[11px] font-bold text-slate-600 block mb-1">Referral Bonus Points</label>
                   <input
                     type="number"
                     value={referralBonusPoints}
                     onChange={(e) => setReferralBonusPoints(Number(e.target.value))}
-                    className="w-full px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs text-white"
+                    className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold"
                   />
                 </div>
               )}
@@ -562,14 +562,14 @@ export default function NewQuizPage() {
         <div className="flex items-center justify-end gap-3 pt-4">
           <Link
             href="/admin/dashboard"
-            className="px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-xs font-semibold text-slate-300 transition"
+            className="px-6 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition"
           >
             Cancel
           </Link>
           <button
             type="submit"
             disabled={isSubmitting || !quota.allowed}
-            className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 transition hover:scale-105"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] disabled:opacity-50 text-white font-black text-xs shadow-xl shadow-[#e05a38]/20 transition hover:scale-105"
           >
             <Sparkles className="w-4 h-4" />
             {isSubmitting ? 'Creating Competition...' : 'Create & Proceed to Questions'}

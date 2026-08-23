@@ -43,7 +43,7 @@ export default function ManageTournamentRoundsPage() {
 
   if (!quiz) {
     return (
-      <div className="max-w-4xl mx-auto py-20 text-center text-white">
+      <div className="max-w-4xl mx-auto py-20 text-center text-slate-900 font-bold">
         <p>Quiz not found.</p>
       </div>
     );
@@ -63,6 +63,7 @@ export default function ManageTournamentRoundsPage() {
         max_qualifiers: Number(maxQualifiers),
         status,
       });
+      setEditingRoundId(null);
     } else {
       addRound(quizId, {
         title: title.trim(),
@@ -75,10 +76,10 @@ export default function ManageTournamentRoundsPage() {
       });
     }
 
-    resetForm();
+    reset();
   };
 
-  const resetForm = () => {
+  const reset = () => {
     setIsAdding(false);
     setEditingRoundId(null);
     setTitle('');
@@ -92,10 +93,10 @@ export default function ManageTournamentRoundsPage() {
     setEditingRoundId(r.id);
     setIsAdding(true);
     setTitle(r.title);
-    setScheduledStart(r.scheduled_start_time ? new Date(r.scheduled_start_time).toISOString().slice(0, 16) : '');
-    setScheduledEnd(r.scheduled_end_time ? new Date(r.scheduled_end_time).toISOString().slice(0, 16) : '');
-    setMinScore(r.min_score_to_qualify);
-    setMinCorrect(r.min_correct_to_qualify);
+    setScheduledStart(new Date(r.scheduled_start_time || Date.now()).toISOString().slice(0, 16));
+    setScheduledEnd(new Date(r.scheduled_end_time || Date.now()).toISOString().slice(0, 16));
+    setMinScore(r.min_score_to_qualify || 0);
+    setMinCorrect(r.min_correct_to_qualify || 0);
     setMaxQualifiers(r.max_qualifiers || 50);
     setStatus(r.status);
   };
@@ -105,147 +106,126 @@ export default function ManageTournamentRoundsPage() {
       {/* Back Link */}
       <Link
         href="/admin/dashboard"
-        className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition"
+        className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900 transition"
       >
         <ArrowLeft className="w-4 h-4" />
-        Back to Dashboard
+        Back to Organizer Dashboard
       </Link>
 
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <span className="text-xs font-bold text-purple-400 uppercase tracking-wider">
+          <span className="text-xs font-black text-[#e05a38] uppercase tracking-wider">
             {quiz.title} • Tournament Bracket
           </span>
-          <h1 className="text-3xl font-extrabold text-white mt-1">Tournament Levels & Rounds</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">
+            Tournament Levels & Schedule
+          </h1>
         </div>
 
         {!isAdding && (
           <button
             onClick={() => {
-              resetForm();
+              reset();
               setIsAdding(true);
             }}
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/20 transition"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-lg shadow-[#e05a38]/20 transition"
           >
             <Plus className="w-4 h-4" />
-            Add Level / Round
+            Add Tournament Level
           </button>
         )}
       </div>
 
-      {/* Round Form */}
+      {/* Form */}
       {isAdding && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-purple-500/30 space-y-6 shadow-2xl">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <Layers className="w-4 h-4 text-purple-400" />
+        <div className="p-8 rounded-3xl bg-white border-2 border-[#e05a38] space-y-6 shadow-xl">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <h2 className="text-base font-black text-slate-900">
               {editingRoundId ? 'Edit Tournament Level' : 'Add Tournament Level'}
             </h2>
-            <button onClick={resetForm} className="text-xs text-slate-400 hover:text-white">
+            <button onClick={reset} className="text-xs font-bold text-slate-500 hover:text-slate-900">
               Cancel
             </button>
           </div>
 
           <form onSubmit={handleSave} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Round Title *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Round 3: Semi-Finals"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Round Status</label>
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value as RoundStatus)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
-                >
-                  <option value="pending">Pending (Upcoming)</option>
-                  <option value="active">Active (Currently Live)</option>
-                  <option value="completed">Completed</option>
-                </select>
-              </div>
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Round / Level Title *</label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Round 2: Grand Finals & System Design"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
+              />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Scheduled Start Date/Time</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Scheduled Start Time</label>
                 <input
                   type="datetime-local"
                   value={scheduledStart}
                   onChange={(e) => setScheduledStart(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">Scheduled End Date/Time</label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Scheduled End / Cutoff</label>
                 <input
                   type="datetime-local"
                   value={scheduledEnd}
                   onChange={(e) => setScheduledEnd(e.target.value)}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                  Min Score to Qualify
-                </label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Min Points to Qualify</label>
                 <input
                   type="number"
                   value={minScore}
                   onChange={(e) => setMinScore(Number(e.target.value))}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                  Min Correct Answers
-                </label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Min Correct Answers</label>
                 <input
                   type="number"
                   value={minCorrect}
                   onChange={(e) => setMinCorrect(Number(e.target.value))}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
                 />
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-300 block mb-1.5">
-                  Max Advancing Qualifiers
-                </label>
+                <label className="text-xs font-bold text-slate-700 block mb-1.5">Max Qualifiers Allowed</label>
                 <input
                   type="number"
                   value={maxQualifiers}
                   onChange={(e) => setMaxQualifiers(Number(e.target.value))}
-                  className="w-full px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                  className="w-full px-4 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
               <button
                 type="button"
-                onClick={resetForm}
-                className="px-4 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 text-xs font-semibold text-slate-400"
+                onClick={reset}
+                className="px-5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-6 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs shadow-md shadow-purple-600/20"
+                className="px-6 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-md shadow-[#e05a38]/20 transition"
               >
                 {editingRoundId ? 'Update Level' : 'Save Level'}
               </button>
@@ -254,68 +234,54 @@ export default function ManageTournamentRoundsPage() {
         </div>
       )}
 
-      {/* Existing Rounds List */}
+      {/* Rounds List */}
       <div className="space-y-4">
         {quizRounds.map((round) => (
           <div
             key={round.id}
-            className="p-6 rounded-2xl bg-slate-900 border border-slate-800 hover:border-slate-700 transition flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl"
+            className="p-6 rounded-3xl bg-white border border-[#ebdcd1] shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4"
           >
             <div className="space-y-2">
-              <div className="flex items-center gap-2.5">
-                <span className="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase bg-purple-500/20 text-purple-300">
-                  Level {round.round_number}
+              <div className="flex items-center gap-2">
+                <span className="w-7 h-7 rounded-xl bg-[#fff0ea] text-[#e05a38] font-black text-xs flex items-center justify-center">
+                  L{round.round_number}
                 </span>
+                <h3 className="text-base font-black text-slate-900">{round.title}</h3>
                 <span
-                  className={`px-2.5 py-0.5 rounded text-[10px] font-semibold uppercase ${
+                  className={`px-2.5 py-0.5 rounded-xl text-[10px] font-black uppercase ${
                     round.status === 'active'
-                      ? 'bg-emerald-500/10 text-emerald-400'
-                      : round.status === 'completed'
-                      ? 'bg-slate-800 text-slate-400'
-                      : 'bg-amber-500/10 text-amber-300'
+                      ? 'bg-[#dcfce7] text-[#15803d]'
+                      : 'bg-slate-100 text-slate-600'
                   }`}
                 >
                   {round.status}
                 </span>
               </div>
 
-              <h3 className="text-base font-bold text-white">{round.title}</h3>
-
-              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
-                <span className="flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-indigo-400" />
-                  Start: {formatDate(round.scheduled_start_time)}
-                </span>
+              <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 font-medium">
+                <span>Pass: <strong>{round.min_score_to_qualify} pts</strong> & <strong>{round.min_correct_to_qualify} correct</strong></span>
                 <span>•</span>
-                <span className="text-amber-300 font-semibold">
-                  Min {round.min_score_to_qualify} pts / {round.min_correct_to_qualify} correct
-                </span>
+                <span>Max Qualifiers: <strong>{round.max_qualifiers || 'Unlimited'}</strong></span>
                 <span>•</span>
-                <span>Max Qualifiers: {round.max_qualifiers || 'Unlimited'}</span>
+                <span>Starts: {formatDate(round.scheduled_start_time)}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Link
-                href={`/admin/quizzes/${quiz.id}/questions`}
-                className="px-3.5 py-2 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 transition"
-              >
-                Manage Questions
-              </Link>
               <button
                 onClick={() => startEdit(round)}
-                className="p-2 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 transition"
+                className="p-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-700 transition"
+                title="Edit level"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
-              {quizRounds.length > 1 && (
-                <button
-                  onClick={() => deleteRound(round.id)}
-                  className="p-2 rounded-lg bg-slate-950 hover:bg-rose-950/40 text-rose-400 transition"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
+              <button
+                onClick={() => deleteRound(round.id)}
+                className="p-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 transition"
+                title="Delete level"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
         ))}
