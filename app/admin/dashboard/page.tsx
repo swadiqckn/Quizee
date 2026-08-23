@@ -183,6 +183,16 @@ export default function AdminDashboardPage() {
                     {quiz.status}
                   </span>
 
+                  <span
+                    className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+                      quiz.is_public !== false
+                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                        : 'bg-amber-50 text-amber-800 border border-amber-200'
+                    }`}
+                  >
+                    {quiz.is_public !== false ? '🌐 Public' : '🔒 Private (Link Only)'}
+                  </span>
+
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-600">
                     Max: {quiz.max_participants ? `${quiz.max_participants} users` : 'Unlimited'}
                   </span>

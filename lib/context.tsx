@@ -513,6 +513,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       shuffle_options: quizData.shuffle_options ?? true,
       enable_referral_bonus: quizData.enable_referral_bonus ?? false,
       referral_bonus_points: quizData.referral_bonus_points ?? 10,
+      is_public: quizData.is_public !== false,
       status: quizData.status || 'published',
       max_participants: participantCap,
       start_time: quizData.start_time || new Date().toISOString(),
@@ -522,11 +523,12 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
 
     const generatedSlug = quizData.slug?.trim() || slugify(quizData.title || 'quiz');
     const allowRetries = quizData.allow_retries === true;
+    const isPublic = quizData.is_public !== false;
 
     let newQuiz: Quiz;
 
     try {
-      // First attempt with slug and allow_retries
+      // First attempt with slug, allow_retries, and is_public
       const { data: dbQuiz, error } = await supabase
         .from('quizzes')
         .insert({
@@ -540,6 +542,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
           ...dbQuiz,
           slug: generatedSlug,
           allow_retries: allowRetries,
+          is_public: isPublic,
           questions_count: 0,
         };
       } else {
@@ -548,6 +551,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
           ...quizInsert,
           slug: generatedSlug,
           allow_retries: allowRetries,
+          is_public: isPublic,
           created_at: new Date().toISOString(),
           organisation: activeOrg || undefined,
           questions_count: 0,
@@ -559,6 +563,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         ...quizInsert,
         slug: generatedSlug,
         allow_retries: allowRetries,
+        is_public: isPublic,
         created_at: new Date().toISOString(),
         organisation: activeOrg || undefined,
         questions_count: 0,

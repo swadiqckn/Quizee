@@ -50,6 +50,7 @@ export default function NewQuizPage() {
   const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(false);
   const [shuffleOptions, setShuffleOptions] = useState<boolean>(true);
   const [allowRetries, setAllowRetries] = useState<boolean>(false);
+  const [isPublic, setIsPublic] = useState<boolean>(true);
 
   // Referral System Settings
   const [enableReferralBonus, setEnableReferralBonus] = useState<boolean>(true);
@@ -93,6 +94,7 @@ export default function NewQuizPage() {
       enable_referral_bonus: enableReferralBonus,
       referral_bonus_points: Number(referralBonusPoints),
       allow_retries: allowRetries,
+      is_public: isPublic,
       status: 'published',
     });
 
@@ -261,6 +263,51 @@ export default function NewQuizPage() {
                 onChange={(e) => setBannerUrl(e.target.value)}
                 className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
               />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Visibility & Discovery</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsPublic(true)}
+                  className={`p-4 rounded-2xl border-2 text-left transition ${
+                    isPublic
+                      ? 'bg-emerald-50 border-emerald-600 text-slate-900 shadow-sm'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                      🌐 Public Competition
+                    </span>
+                    {isPublic && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Listed on the public Explore directory for anyone to discover.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPublic(false)}
+                  className={`p-4 rounded-2xl border-2 text-left transition ${
+                    !isPublic
+                      ? 'bg-amber-50 border-amber-600 text-slate-900 shadow-sm'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      🔒 Private (Direct Link Only)
+                    </span>
+                    {!isPublic && <CheckCircle2 className="w-4 h-4 text-amber-600" />}
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Hidden from Explore. Only users with the direct link/slug can enter.
+                  </p>
+                </button>
+              </div>
             </div>
           </div>
         </div>

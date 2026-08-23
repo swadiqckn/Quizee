@@ -100,6 +100,7 @@ export interface Quiz {
   enable_referral_bonus: boolean;
   referral_bonus_points: number;
   allow_retries?: boolean; // When true, contestants can try again from results page (default: false)
+  is_public?: boolean; // When true, listed on explore directory; when false, only accessible via direct link/slug
   status: QuizStatus;
   max_participants: number | null; // 100 for Free, null for Unlimited (Plus)
   start_time: string | null;

@@ -63,6 +63,7 @@ export default function EditQuizPage() {
   // Referral System Settings
   const [enableReferralBonus, setEnableReferralBonus] = useState<boolean>(true);
   const [referralBonusPoints, setReferralBonusPoints] = useState<number>(25);
+  const [isPublic, setIsPublic] = useState<boolean>(true);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -78,6 +79,7 @@ export default function EditQuizPage() {
       setDescription(quiz.description || '');
       setBannerUrl(quiz.banner_url || '');
       setStatus(quiz.status || 'published');
+      setIsPublic(quiz.is_public !== false);
       setQuizType(quiz.quiz_type || 'tournament');
       setProgressionMode(quiz.progression_mode || 'automatic');
       setScoringStrategy(quiz.scoring_strategy || 'time_decay');
@@ -153,6 +155,7 @@ export default function EditQuizPage() {
         description: description.trim(),
         banner_url: bannerUrl.trim() || undefined,
         status,
+        is_public: isPublic,
         quiz_type: quizType,
         progression_mode: progressionMode,
         scoring_strategy: scoringStrategy,
@@ -343,6 +346,51 @@ export default function EditQuizPage() {
                 <option value="draft">🟡 Draft (Hidden from participants)</option>
                 <option value="completed">🔵 Completed (Archived results)</option>
               </select>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">Visibility & Directory Listing</label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsPublic(true)}
+                  className={`p-4 rounded-2xl border-2 text-left transition ${
+                    isPublic
+                      ? 'bg-emerald-50 border-emerald-600 text-slate-900 shadow-sm'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                      🌐 Public Competition
+                    </span>
+                    {isPublic && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Listed on the public Explore directory for anyone to discover.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsPublic(false)}
+                  className={`p-4 rounded-2xl border-2 text-left transition ${
+                    !isPublic
+                      ? 'bg-amber-50 border-amber-600 text-slate-900 shadow-sm'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                      🔒 Private (Direct Link Only)
+                    </span>
+                    {!isPublic && <CheckCircle2 className="w-4 h-4 text-amber-600" />}
+                  </div>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Hidden from Explore. Only users with the direct link/slug can enter.
+                  </p>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -25,6 +25,10 @@ export default function ExplorePage() {
   const [selectedStrategy, setSelectedStrategy] = useState<'all' | 'time_decay' | 'fixed'>('all');
 
   const filteredQuizzes = quizzes.filter((quiz) => {
+    // Only public quizzes (is_public !== false) and published status appear in public explore directory
+    const isPublicQuiz = quiz.is_public !== false && quiz.status === 'published';
+    if (!isPublicQuiz) return false;
+
     const matchesSearch =
       quiz.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (quiz.description && quiz.description.toLowerCase().includes(searchTerm.toLowerCase()));
