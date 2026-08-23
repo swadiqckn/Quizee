@@ -68,6 +68,66 @@ export function QuizMicrosite({
   );
   const disallowRetries = quiz.allow_retries !== true;
 
+  // Real-time Countdown Timer Logic
+  const scheduledStartTimeStr = activeRound?.scheduled_start_time || quiz.start_time;
+  const [timeLeft, setTimeLeft] = useState<{
+    days: number;
+    hours: number;
+    minutes: number;
+    seconds: number;
+    totalMs: number;
+    isStarted: boolean;
+  }>({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    totalMs: 0,
+    isStarted: true,
+  });
+
+  useEffect(() => {
+    if (!scheduledStartTimeStr) {
+      setTimeLeft((prev) => ({ ...prev, isStarted: true }));
+      return;
+    }
+
+    const calculateTime = () => {
+      const startMs = new Date(scheduledStartTimeStr).getTime();
+      const nowMs = Date.now();
+      const diff = startMs - nowMs;
+
+      if (diff <= 0) {
+        setTimeLeft({
+          days: 0,
+          hours: 0,
+          minutes: 0,
+          seconds: 0,
+          totalMs: 0,
+          isStarted: true,
+        });
+      } else {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+        setTimeLeft({
+          days,
+          hours,
+          minutes,
+          seconds,
+          totalMs: diff,
+          isStarted: false,
+        });
+      }
+    };
+
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+    return () => clearInterval(interval);
+  }, [scheduledStartTimeStr]);
+
   // Retrieve cached answers breakdown if available
   const [breakdown, setBreakdown] = useState<AnswerReviewItem[]>([]);
 
@@ -240,10 +300,17 @@ export function QuizMicrosite({
             {/* Top Status Badges */}
             <div className="flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#e05a38] text-white text-[11px] font-bold shadow-sm shadow-[#e05a38]/20 uppercase tracking-wider">
-                  <Flame className="w-3 h-3" />
-                  Live Arena
-                </span>
+                {timeLeft.isStarted ? (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#e05a38] text-white text-[11px] font-bold shadow-sm shadow-[#e05a38]/20 uppercase tracking-wider">
+                    <Flame className="w-3 h-3" />
+                    Live Arena
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#fffbeb] text-[#b45309] border border-[#fde68a] text-[11px] font-bold uppercase tracking-wider">
+                    <Clock className="w-3 h-3" />
+                    Starts in {timeLeft.hours > 0 ? `${timeLeft.hours}h ` : ''}{timeLeft.minutes}m {timeLeft.seconds}s
+                  </span>
+                )}
 
                 <span className="px-3 py-0.5 rounded-full bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe] text-[11px] font-bold uppercase tracking-wider">
                   {quiz.quiz_type}
@@ -334,11 +401,13 @@ export function QuizMicrosite({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <span className="text-[11px] font-bold text-[#e05a38] uppercase tracking-wider">
-                    Ready to Compete?
+                    {timeLeft.isStarted ? 'Ready to Compete?' : 'Upcoming Competition'}
                   </span>
                   <h2 className="text-xl font-bold text-slate-900">
                     {userEntry && disallowRetries
                       ? 'Attempt Completed'
+                      : !timeLeft.isStarted
+                      ? `Starts in: ${timeLeft.hours > 0 ? `${timeLeft.hours}h ` : ''}${timeLeft.minutes}m ${timeLeft.seconds}s`
                       : activeRound
                       ? `Arena Open: ${activeRound.title}`
                       : 'Live Competition Arena'}
@@ -346,9 +415,32 @@ export function QuizMicrosite({
                   <p className="text-xs text-slate-500 font-medium">
                     {userEntry && disallowRetries
                       ? `Your score of ${userEntry.score} pts is recorded on the leaderboard.`
+                      : !timeLeft.isStarted
+                      ? `Competition is scheduled to begin at ${formatDate(scheduledStartTimeStr)}. Stand by to start.`
                       : 'Answer quickly to secure speed points and climb the rankings.'}
                   </p>
                 </div>
+
+                {!timeLeft.isStarted && (
+                  <div className="grid grid-cols-4 gap-2 text-center py-1 max-w-xs">
+                    <div className="p-2 rounded-2xl bg-white border border-[#ffd5c4] shadow-xs">
+                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">{String(timeLeft.days).padStart(2, '0')}</span>
+                      <span className="text-[9px] text-slate-400 font-bold block uppercase">Days</span>
+                    </div>
+                    <div className="p-2 rounded-2xl bg-white border border-[#ffd5c4] shadow-xs">
+                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">{String(timeLeft.hours).padStart(2, '0')}</span>
+                      <span className="text-[9px] text-slate-400 font-bold block uppercase">Hours</span>
+                    </div>
+                    <div className="p-2 rounded-2xl bg-white border border-[#ffd5c4] shadow-xs">
+                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                      <span className="text-[9px] text-slate-400 font-bold block uppercase">Mins</span>
+                    </div>
+                    <div className="p-2 rounded-2xl bg-white border border-[#ffd5c4] shadow-xs">
+                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                      <span className="text-[9px] text-slate-400 font-bold block uppercase">Secs</span>
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap items-center gap-2.5">
                   {userEntry && disallowRetries ? (
@@ -360,13 +452,21 @@ export function QuizMicrosite({
                       <span>View Results & Answers ({userEntry.score} pts)</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
+                  ) : !timeLeft.isStarted ? (
+                    <button
+                      disabled
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs shadow-sm cursor-not-allowed opacity-90"
+                    >
+                      <Clock className="w-4 h-4 text-amber-600 animate-spin" />
+                      <span>Starts in {timeLeft.hours > 0 ? `${timeLeft.hours}h ` : ''}{timeLeft.minutes}m ${timeLeft.seconds}s</span>
+                    </button>
                   ) : (
                     <Link
                       href={`/${slug}/play${activeRound ? `?roundId=${activeRound.id}` : ''}`}
                       className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/25 transition hover:scale-105"
                     >
                       <Zap className="w-4 h-4" />
-                      <span>Enter Arena</span>
+                      <span>Start Quiz</span>
                       <ArrowRight className="w-4 h-4" />
                     </Link>
                   )}
@@ -398,32 +498,43 @@ export function QuizMicrosite({
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {quizRounds.map((r) => (
-                    <div
-                      key={r.id}
-                      className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-[#e05a38]">Round {r.round_number}</span>
-                        <span
-                          className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
-                            r.status === 'active'
-                              ? 'bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0]'
-                              : 'bg-white border border-slate-200 text-slate-600'
-                          }`}
-                        >
-                          {r.status}
-                        </span>
+                  {quizRounds.map((r) => {
+                    const roundStartMs = r.scheduled_start_time ? new Date(r.scheduled_start_time).getTime() : 0;
+                    const isRoundUpcoming = roundStartMs > 0 && roundStartMs > Date.now();
+                    const isRoundActive = !isRoundUpcoming && r.status === 'active';
+
+                    return (
+                      <div
+                        key={r.id}
+                        className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-[#e05a38]">Round {r.round_number}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
+                              isRoundActive
+                                ? 'bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0]'
+                                : isRoundUpcoming
+                                ? 'bg-[#fffbeb] text-[#b45309] border border-[#fde68a]'
+                                : 'bg-white border border-slate-200 text-slate-600'
+                            }`}
+                          >
+                            {isRoundActive ? 'ACTIVE' : isRoundUpcoming ? 'UPCOMING' : r.status}
+                          </span>
+                        </div>
+
+                        <h4 className="text-sm font-bold text-slate-900">{r.title}</h4>
+
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Starts: {formatDate(r.scheduled_start_time)}
+                        </p>
+                        <p className="text-[11px] text-slate-500 font-medium">
+                          Cut-off: <strong>{r.min_score_to_qualify} pts</strong> &{' '}
+                          <strong>{r.min_correct_to_qualify} correct</strong>
+                        </p>
                       </div>
-
-                      <h4 className="text-sm font-bold text-slate-900">{r.title}</h4>
-
-                      <p className="text-[11px] text-slate-500 font-medium">
-                        Cut-off: <strong>{r.min_score_to_qualify} pts</strong> &{' '}
-                        <strong>{r.min_correct_to_qualify} correct</strong>
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

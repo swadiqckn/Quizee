@@ -22,6 +22,7 @@ import { useQuizPlatform } from '@/lib/context';
 import { shuffleArray } from '@/lib/scoring';
 import { Question, QuestionOption } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
+import { formatDate } from '@/lib/utils';
 
 function QuizPlayContent() {
   const params = useParams();
@@ -254,6 +255,41 @@ function QuizPlayContent() {
               className="w-full py-3 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-2"
             >
               <span>Back to Overview</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if competition start time has not arrived yet
+  const scheduledStartTimeStr = currentRound?.scheduled_start_time || quiz.start_time;
+  const isScheduledInFuture = scheduledStartTimeStr ? new Date(scheduledStartTimeStr).getTime() > Date.now() : false;
+
+  if (isScheduledInFuture) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-white border border-[#ebdcd1] shadow-2xl space-y-6 text-center">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-sm">
+            <Clock className="w-8 h-8" />
+          </div>
+
+          <div className="space-y-2">
+            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
+              Starts Soon
+            </span>
+            <h1 className="text-2xl font-bold text-slate-900">Competition Has Not Started</h1>
+            <p className="text-xs text-slate-600 leading-relaxed font-medium">
+              This competition is scheduled to begin at <strong className="text-slate-900">{formatDate(scheduledStartTimeStr)}</strong>.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <Link
+              href={`/quiz/${quizId}`}
+              className="w-full py-3.5 px-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition flex items-center justify-center gap-2"
+            >
+              <span>Back to Overview & Countdown</span>
             </Link>
           </div>
         </div>
