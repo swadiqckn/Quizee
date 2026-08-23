@@ -27,8 +27,8 @@ import {
 import { calculateQuestionPoints, evaluateQualification } from './scoring';
 
 interface QuizPlatformContextType {
-  currentUser: Profile;
-  setCurrentUser: (user: Profile) => void;
+  currentUser: Profile | null;
+  setCurrentUser: (user: Profile | null) => void;
   switchUserRole: (role: 'superadmin' | 'admin' | 'participant') => void;
   allUsers: Profile[];
   organisations: Organisation[];
@@ -91,7 +91,8 @@ interface QuizPlatformContextType {
 const QuizPlatformContext = createContext<QuizPlatformContextType | undefined>(undefined);
 
 export function QuizPlatformProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<Profile>(MOCK_USERS[2]); // Default: alexchen (Participant)
+  // Start with clean guest state (No demo account logged in at first)
+  const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [allUsers, setAllUsers] = useState<Profile[]>(MOCK_USERS);
   const [organisations, setOrganisations] = useState<Organisation[]>(MOCK_ORGS);
   const [activeOrg, setActiveOrg] = useState<Organisation | null>(MOCK_ORGS[0]);
@@ -214,8 +215,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   };
 
   const logout = () => {
-    const defaultGuest = MOCK_USERS[2];
-    setCurrentUser(defaultGuest);
+    setCurrentUser(null);
     try {
       localStorage.removeItem('quiz_current_user');
     } catch (e) {}
@@ -262,7 +262,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     }
 
     const currentPlan: PlanType = activeOrg?.plan || 'free';
-    const participantCap = currentPlan === 'free' ? 100 : null; // Free: max 100 participants
+    const participantCap = currentPlan === 'free' ? 100 : null;
 
     const newQuiz: Quiz = {
       id: `quiz-${Date.now()}`,
@@ -284,7 +284,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       max_participants: participantCap,
       start_time: quizData.start_time || new Date().toISOString(),
       end_time: quizData.end_time || new Date(Date.now() + 48 * 3600000).toISOString(),
-      created_by: currentUser.id,
+      created_by: currentUser?.id || 'admin-host',
       created_at: new Date().toISOString(),
       organisation: activeOrg || undefined,
       questions_count: 0,
@@ -292,7 +292,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
 
     setQuizzes((prev) => [newQuiz, ...prev]);
 
-    // Increment monthly count on activeOrg
     if (activeOrg) {
       const updatedOrg = {
         ...activeOrg,
@@ -444,7 +443,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       id: `entry-${Date.now()}`,
       quiz_id: quizId,
       round_id: roundId,
-      user_id: currentUser.id,
+      user_id: currentUser?.id || 'guest-contestant',
       score: calculatedScore,
       total_correct: totalCorrectCount,
       total_time_taken_ms: totalTimeTaken,
@@ -452,17 +451,19 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       status: 'submitted',
       started_at: new Date(Date.now() - totalTimeTaken).toISOString(),
       completed_at: new Date().toISOString(),
-      user: currentUser,
+      user: currentUser || undefined,
       quiz: targetQuiz,
       round: targetRound,
     };
 
     setEntries((prev) => [newEntry, ...prev]);
 
-    setCurrentUser((prev) => ({
-      ...prev,
-      total_points: prev.total_points + calculatedScore,
-    }));
+    if (currentUser) {
+      setCurrentUser((prev) => prev ? ({
+        ...prev,
+        total_points: prev.total_points + calculatedScore,
+      }) : null);
+    }
 
     return {
       entry: newEntry,
@@ -479,6 +480,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   };
 
   const applyReferralCode = (code: string): boolean => {
+    if (!currentUser) return false;
     const referrer = allUsers.find((u) => u.referral_code.toUpperCase() === code.trim().toUpperCase());
     if (!referrer || referrer.id === currentUser.id) return false;
 
@@ -505,11 +507,11 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       )
     );
 
-    setCurrentUser((prev) => ({
+    setCurrentUser((prev) => prev ? ({
       ...prev,
       referred_by: referrer.id,
       total_points: prev.total_points + 10,
-    }));
+    }) : null);
 
     return true;
   };
