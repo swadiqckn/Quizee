@@ -55,7 +55,6 @@ export function QuizMicrosite({
   const [activeTab, setActiveTab] = useState<'home' | 'ranks' | 'referrals' | 'history'>('home');
   const [copiedLink, setCopiedLink] = useState(false);
   const [showAnswersAccordion, setShowAnswersAccordion] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
 
   const quizRounds = rounds.filter((r) => r.quiz_id === quiz.id).sort((a, b) => a.round_number - b.round_number);
   const activeRound = quiz.quiz_type === 'tournament'
@@ -192,22 +191,17 @@ export function QuizMicrosite({
     window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${text}`, '_blank');
   };
 
-  // Filtered leaderboard entries
+  // Leaderboard entries
   const quizEntries = entries
     .filter((e) => e.quiz_id === quiz.id)
     .sort((a, b) => b.score - a.score || a.total_time_taken_ms - b.total_time_taken_ms);
-
-  const filteredEntries = quizEntries.filter((e) => {
-    const name = e.user?.full_name || e.user?.username || '';
-    return name.toLowerCase().includes(searchTerm.toLowerCase());
-  });
 
   const myRank = userEntry ? quizEntries.findIndex((e) => e.id === userEntry.id) + 1 : null;
 
   return (
     <div className="min-h-screen bg-[#fffaf5] text-slate-900 pb-28 sm:pb-16 selection:bg-[#e05a38]/20 selection:text-[#e05a38]">
-      {/* --- DESKTOP / TABLET TAB HEADER --- */}
-      <div className="border-b border-[#ebdcd1] bg-[#fffcf9] sticky top-0 sm:top-16 z-30 shadow-xs">
+      {/* --- DESKTOP / TABLET TAB HEADER (Hidden on mobile, bottom bar used instead) --- */}
+      <div className="hidden sm:block border-b border-[#ebdcd1] bg-[#fffcf9] sticky top-16 z-30 shadow-xs">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 py-2.5 flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             {activeTab !== 'home' && (
@@ -624,30 +618,21 @@ export function QuizMicrosite({
 
             {/* Leaderboard Table (Rank Number, Name, Points ONLY) */}
             <div className="p-5 sm:p-7 rounded-3xl bg-white border border-[#ebdcd1] shadow-lg space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3.5">
+              <div className="border-b border-slate-100 pb-3.5">
                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                   <Trophy className="w-5 h-5 text-amber-500" />
                   Leaderboard
                 </h3>
-
-                {/* Search Contestant Input */}
-                <input
-                  type="text"
-                  placeholder="Search name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-[#e05a38] w-40 sm:w-56"
-                />
               </div>
 
-              {filteredEntries.length === 0 ? (
+              {quizEntries.length === 0 ? (
                 <div className="text-center py-10 text-slate-400 text-xs font-medium space-y-2">
                   <Users className="w-7 h-7 text-slate-300 mx-auto" />
                   <p>No contestants recorded yet.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100">
-                  {filteredEntries.map((e, index) => {
+                  {quizEntries.map((e) => {
                     const isMe = currentUser ? e.user_id === currentUser.id : false;
                     const rank = quizEntries.findIndex((item) => item.id === e.id) + 1;
 
