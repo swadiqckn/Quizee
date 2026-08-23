@@ -35,7 +35,17 @@ export default function QuizDetailPage() {
   const quiz = quizzes.find((q) => q.id === quizId) || directQuiz;
   const quizRounds = rounds.filter((r) => r.quiz_id === quizId).sort((a, b) => a.round_number - b.round_number);
   const quizQuestions = questions.filter((q) => q.quiz_id === quizId);
-  const userEntries = entries.filter((e) => e.quiz_id === quizId && (currentUser ? e.user_id === currentUser.id : false));
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleShareOrInvite = () => {
+    if (typeof window === 'undefined') return;
+    const shareUrl = currentUser?.referral_code
+      ? `${window.location.origin}/quiz/${quiz.id}?ref=${currentUser.referral_code}`
+      : `${window.location.origin}/quiz/${quiz.id}`;
+    navigator.clipboard.writeText(shareUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
 
   React.useEffect(() => {
     if (!quiz && quizId) {
@@ -137,8 +147,8 @@ export default function QuizDetailPage() {
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <p className="text-[11px] text-slate-500 font-bold">Referral Bonus</p>
-              <p className="text-base font-bold text-[#15803d] mt-0.5">
-                {quiz.enable_referral_bonus ? `+${quiz.referral_bonus_points} pts` : 'None'}
+              <p className={`text-base font-bold mt-0.5 ${quiz.enable_referral_bonus ? 'text-[#15803d]' : 'text-slate-500'}`}>
+                {quiz.enable_referral_bonus ? `+${quiz.referral_bonus_points} pts` : 'Disabled'}
               </p>
             </div>
           </div>
@@ -154,13 +164,27 @@ export default function QuizDetailPage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
 
-            <Link
-              href="/referrals"
-              className="inline-flex items-center gap-2 px-5 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-bold transition"
-            >
-              <Gift className="w-4 h-4 text-[#e05a38]" />
-              Invite Friends (+{quiz.referral_bonus_points || 10} pts)
-            </Link>
+            {quiz.enable_referral_bonus ? (
+              <button
+                onClick={handleShareOrInvite}
+                className="inline-flex items-center gap-2 px-5 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-bold shadow-sm transition hover:scale-105"
+              >
+                <Gift className="w-4 h-4 text-[#e05a38]" />
+                <span>
+                  {copiedLink
+                    ? '✓ Invite Link Copied!'
+                    : `Invite Friends (+${quiz.referral_bonus_points || 10} pts)`}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={handleShareOrInvite}
+                className="inline-flex items-center gap-2 px-5 py-4 rounded-2xl bg-white hover:bg-slate-50 border border-[#ebdcd1] text-slate-700 text-xs font-bold shadow-sm transition hover:scale-105"
+              >
+                <Share2 className="w-4 h-4 text-slate-500" />
+                <span>{copiedLink ? '✓ Competition Link Copied!' : 'Share Competition'}</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
