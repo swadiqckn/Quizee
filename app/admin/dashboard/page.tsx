@@ -42,23 +42,23 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-[#e05a38] text-xs font-black uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-[#e05a38] text-xs font-bold uppercase tracking-wider">
             <span>Organizer Portal</span>
             <span>•</span>
             <span className="text-slate-900">{activeOrg?.name || 'All Organizations'}</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">Competitions Dashboard</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-1">Competitions Dashboard</h1>
         </div>
 
         <div className="flex items-center gap-3">
           <Link
             href="/admin/billing"
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-[#ebdcd1] text-xs font-black text-slate-700 shadow-sm transition"
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-[#ebdcd1] text-xs font-bold text-slate-700 shadow-sm transition"
           >
             <CreditCard className="w-4 h-4 text-[#e05a38]" />
             <span>Manage Plan</span>
             <span
-              className={`px-2 py-0.5 rounded-lg text-[10px] font-black uppercase ${
+              className={`px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase ${
                 currentPlan === 'plus'
                   ? 'bg-[#fff0ea] text-[#c2411d] border border-[#ffd8cb]'
                   : 'bg-slate-100 text-slate-600'
@@ -70,7 +70,7 @@ export default function AdminDashboardPage() {
 
           <Link
             href="/admin/quizzes/new"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-lg shadow-[#e05a38]/20 transition hover:scale-105"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition hover:scale-105"
           >
             <Plus className="w-4 h-4" />
             Create Competition
@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
               <Crown className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-black text-slate-900">
+              <p className="text-xs font-bold text-slate-900">
                 Free Plan: {quota.currentCount} / {quota.maxAllowed} Quizzes Created This Month
               </p>
               <p className="text-[11px] text-slate-600 font-medium">
@@ -97,7 +97,7 @@ export default function AdminDashboardPage() {
 
           <Link
             href="/admin/billing"
-            className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-black transition shrink-0 shadow-md shadow-[#e05a38]/20"
+            className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold transition shrink-0 shadow-md shadow-[#e05a38]/20"
           >
             Upgrade to Plus ($29/mo)
           </Link>
@@ -111,7 +111,7 @@ export default function AdminDashboardPage() {
             <span className="text-xs text-slate-500 font-bold">Total Competitions</span>
             <Trophy className="w-4 h-4 text-[#e05a38]" />
           </div>
-          <p className="text-3xl font-black text-slate-900">{orgQuizzes.length}</p>
+          <p className="text-3xl font-bold text-slate-900">{orgQuizzes.length}</p>
           <p className="text-[11px] text-slate-400 font-medium">{tournamentsCount} Tournaments, {singleCount} Single</p>
         </div>
 
@@ -120,7 +120,7 @@ export default function AdminDashboardPage() {
             <span className="text-xs text-slate-500 font-bold">Total Participant Runs</span>
             <Users className="w-4 h-4 text-purple-500" />
           </div>
-          <p className="text-3xl font-black text-slate-900">{totalEntries}</p>
+          <p className="text-3xl font-bold text-slate-900">{totalEntries}</p>
           <p className="text-[11px] text-slate-400 font-medium">Live submissions recorded</p>
         </div>
 
@@ -129,7 +129,7 @@ export default function AdminDashboardPage() {
             <span className="text-xs text-slate-500 font-bold">Participant Cap</span>
             <Users className="w-4 h-4 text-[#b45309]" />
           </div>
-          <p className="text-3xl font-black text-[#b45309]">
+          <p className="text-3xl font-bold text-[#b45309]">
             {currentPlan === 'free' ? '100 / quiz' : 'Unlimited'}
           </p>
           <p className="text-[11px] text-slate-400 font-medium">{currentPlan === 'free' ? 'Free Plan Cap' : 'Plus Plan Active'}</p>
@@ -140,7 +140,7 @@ export default function AdminDashboardPage() {
             <span className="text-xs text-slate-500 font-bold">Referral Invites</span>
             <Gift className="w-4 h-4 text-pink-500" />
           </div>
-          <p className="text-3xl font-black text-pink-600">{referrals.length}</p>
+          <p className="text-3xl font-bold text-pink-600">{referrals.length}</p>
           <p className="text-[11px] text-slate-400 font-medium">Viral network participants</p>
         </div>
       </div>
@@ -149,12 +149,12 @@ export default function AdminDashboardPage() {
       <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div>
-            <h2 className="text-lg font-black text-slate-900">Your Competitions</h2>
+            <h2 className="text-lg font-bold text-slate-900">Your Competitions</h2>
             <p className="text-xs text-slate-500 mt-0.5">Manage tournament levels, questions, and live monitors</p>
           </div>
           <Link
             href="/admin/quizzes/new"
-            className="text-xs font-black text-[#e05a38] hover:underline flex items-center gap-1"
+            className="text-xs font-bold text-[#e05a38] hover:underline flex items-center gap-1"
           >
             New Quiz <Plus className="w-3.5 h-3.5" />
           </Link>
@@ -166,7 +166,7 @@ export default function AdminDashboardPage() {
               <div className="space-y-2 max-w-xl">
                 <div className="flex flex-wrap items-center gap-2">
                   <span
-                    className={`px-3 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                    className={`px-3 py-0.5 rounded-full text-[10px] font-bold uppercase ${
                       quiz.quiz_type === 'tournament'
                         ? 'bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe]'
                         : 'bg-[#eff6ff] text-[#2563eb] border border-[#bfdbfe]'
@@ -188,7 +188,7 @@ export default function AdminDashboardPage() {
                   </span>
                 </div>
 
-                <h3 className="text-base font-black text-slate-900">{quiz.title}</h3>
+                <h3 className="text-base font-bold text-slate-900">{quiz.title}</h3>
                 <p className="text-xs text-slate-600 line-clamp-1">{quiz.description}</p>
               </div>
 

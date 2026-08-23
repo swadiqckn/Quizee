@@ -85,7 +85,7 @@ function QuizResultsContent() {
         </div>
 
         <div className="space-y-2">
-          <h1 className="text-3xl font-black text-slate-900">
+          <h1 className="text-3xl font-bold text-slate-900">
             {entry.qualified_for_next_round
               ? '🎉 Qualification Achieved!'
               : entry.score > 0
@@ -112,7 +112,7 @@ function QuizResultsContent() {
               <XCircle className="w-5 h-5 text-[#f59e0b] mt-0.5 shrink-0" />
             )}
             <div className="space-y-1">
-              <p className="text-xs font-black uppercase tracking-wider">
+              <p className="text-xs font-bold uppercase tracking-wider">
                 {entry.qualified_for_next_round ? 'Qualified for Next Level' : 'Did Not Meet Cut-Off'}
               </p>
               <p className="text-xs opacity-90 leading-relaxed font-semibold">
@@ -130,22 +130,22 @@ function QuizResultsContent() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl mx-auto pt-2">
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
             <p className="text-[11px] text-slate-500 font-bold">Final Score</p>
-            <p className="text-2xl font-black text-[#e05a38]">{entry.score} pts</p>
+            <p className="text-2xl font-bold text-[#e05a38]">{entry.score} pts</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
             <p className="text-[11px] text-slate-500 font-bold">Correct Answers</p>
-            <p className="text-2xl font-black text-[#15803d]">{entry.total_correct}</p>
+            <p className="text-2xl font-bold text-[#15803d]">{entry.total_correct}</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
             <p className="text-[11px] text-slate-500 font-bold">Total Speed</p>
-            <p className="text-2xl font-black text-slate-900">{formatTimeMs(entry.total_time_taken_ms)}</p>
+            <p className="text-2xl font-bold text-slate-900">{formatTimeMs(entry.total_time_taken_ms)}</p>
           </div>
 
           <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
             <p className="text-[11px] text-slate-500 font-bold">Arena Rank</p>
-            <p className="text-2xl font-black text-[#b45309]">#{userRank || 1}</p>
+            <p className="text-2xl font-bold text-[#b45309]">#{userRank || 1}</p>
           </div>
         </div>
 
@@ -153,7 +153,7 @@ function QuizResultsContent() {
         <div className="flex flex-wrap items-center justify-center gap-3 pt-4 border-t border-slate-100">
           <Link
             href={`/quiz/${quizId}/play`}
-            className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-black shadow-lg shadow-[#e05a38]/20 transition flex items-center gap-2"
+            className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold shadow-lg shadow-[#e05a38]/20 transition flex items-center gap-2"
           >
             <Repeat className="w-3.5 h-3.5" />
             Try Again
@@ -161,7 +161,7 @@ function QuizResultsContent() {
 
           <button
             onClick={copyReferral}
-            className="px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-black shadow-sm transition flex items-center gap-2"
+            className="px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-bold shadow-sm transition flex items-center gap-2"
           >
             <Share2 className="w-3.5 h-3.5 text-[#e05a38]" />
             {copiedLink ? 'Link Copied!' : 'Share Referral & Earn Bonus'}
@@ -173,7 +173,7 @@ function QuizResultsContent() {
       <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div>
-            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Award className="w-5 h-5 text-amber-500" />
               Round Leaderboard Standings
             </h2>
@@ -196,7 +196,7 @@ function QuizResultsContent() {
               >
                 <div className="flex items-center gap-3.5">
                   <div
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-xs ${
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
                       rank === 1
                         ? 'bg-[#fef3c7] text-[#b45309] border border-[#fde68a]'
                         : rank === 2
@@ -210,7 +210,7 @@ function QuizResultsContent() {
                   </div>
 
                   <div>
-                    <p className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                       <span>{e.user?.full_name || e.user?.username || 'Contestant'}</span>
                       {isMe && <span className="text-[10px] text-[#e05a38] font-bold">(You)</span>}
                     </p>
@@ -221,9 +221,9 @@ function QuizResultsContent() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <span className="text-sm font-black text-[#e05a38] font-mono">{e.score} pts</span>
+                  <span className="text-sm font-bold text-[#e05a38] font-mono">{e.score} pts</span>
                   {e.qualified_for_next_round && (
-                    <span className="px-3 py-1 rounded-xl bg-[#dcfce7] text-[#15803d] text-[10px] font-black">
+                    <span className="px-3 py-1 rounded-xl bg-[#dcfce7] text-[#15803d] text-[10px] font-bold">
                       Qualified
                     </span>
                   )}

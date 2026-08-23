@@ -25,27 +25,27 @@ function RegisterForm() {
         <div className="text-center space-y-2">
           {/* Logo Blocks */}
           <div className="flex items-center justify-center gap-1 mb-3">
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               Q
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               u
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               i
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               z
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               e
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               e
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900">Create Organizer Account</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Create Organizer Account</h1>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             Organizers and schools authenticate securely with Google to manage tenant competitions and batches.
           </p>
@@ -54,7 +54,7 @@ function RegisterForm() {
         <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-xl space-y-6">
           {/* Plan Highlights */}
           <div className="p-5 rounded-2xl bg-[#fff9f6] border border-[#ffd8cb] space-y-2.5">
-            <div className="flex items-center gap-2 text-[#c2411d] text-xs font-black">
+            <div className="flex items-center gap-2 text-[#c2411d] text-xs font-bold">
               <Crown className="w-4 h-4 text-[#e05a38]" />
               <span>Organizer Privileges Included</span>
             </div>
@@ -79,7 +79,7 @@ function RegisterForm() {
             <button
               onClick={handleAdminGoogleRegister}
               type="button"
-              className="w-full py-4 px-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-xl shadow-[#e05a38]/25 transition flex items-center justify-center gap-3 hover:scale-[1.01]"
+              className="w-full py-4 px-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-xl shadow-[#e05a38]/25 transition flex items-center justify-center gap-3 hover:scale-[1.01]"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path

@@ -141,7 +141,7 @@ export default function NewQuizPage() {
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900">Create New Competition</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Create New Competition</h1>
           <p className="text-sm text-slate-600 mt-1">
             Configure single competitions or multi-level tournaments with automated scheduling & dynamic scoring.
           </p>
@@ -149,7 +149,7 @@ export default function NewQuizPage() {
 
         {/* Plan Pill */}
         <div className="p-3 rounded-2xl bg-white border border-[#ebdcd1] text-xs shadow-sm">
-          <p className="text-slate-500 font-medium">Current Plan: <strong className="text-slate-900 uppercase font-black">{currentPlan}</strong></p>
+          <p className="text-slate-500 font-medium">Current Plan: <strong className="text-slate-900 uppercase font-bold">{currentPlan}</strong></p>
           <p className="text-[11px] text-slate-400 font-bold">
             {currentPlan === 'free' ? 'Max 100 participants • 2 quizzes/mo' : 'Unlimited'}
           </p>
@@ -162,7 +162,7 @@ export default function NewQuizPage() {
           <div className="flex items-start gap-3">
             <AlertCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
             <div>
-              <h3 className="text-base font-black text-rose-900">Monthly Quiz Limit Reached (Free Plan)</h3>
+              <h3 className="text-base font-bold text-rose-900">Monthly Quiz Limit Reached (Free Plan)</h3>
               <p className="text-xs text-rose-700 mt-1 leading-relaxed font-medium">
                 The Free Starter Plan allows a maximum of <strong>2 quizzes per month</strong>. You have already created 2 quizzes this month.
               </p>
@@ -175,7 +175,7 @@ export default function NewQuizPage() {
                 upgradeActiveOrgPlan('plus');
                 setErrorMessage(null);
               }}
-              className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-md transition flex items-center gap-2"
+              className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-md transition flex items-center gap-2"
             >
               <Crown className="w-4 h-4" />
               Upgrade to Plus Plan ($29/mo)
@@ -200,7 +200,7 @@ export default function NewQuizPage() {
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Section 1: Basic Information */}
         <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
-          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Trophy className="w-5 h-5 text-[#e05a38]" />
             1. Basic Information
           </h2>
@@ -244,7 +244,7 @@ export default function NewQuizPage() {
 
         {/* Section 2: Competition Format & Tournament Progression */}
         <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
-          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Layers className="w-5 h-5 text-purple-600" />
             2. Competition Format & Progression
           </h2>
@@ -263,7 +263,7 @@ export default function NewQuizPage() {
                 <Layers className="w-5 h-5 text-purple-600" />
                 {quizType === 'tournament' && <CheckCircle2 className="w-4 h-4 text-purple-600" />}
               </div>
-              <h3 className="font-black text-sm text-slate-900">Multi-Round Tournament</h3>
+              <h3 className="font-bold text-sm text-slate-900">Multi-Round Tournament</h3>
               <p className="text-xs text-slate-500 mt-1 font-medium">
                 Multi-level tournament (e.g. Prelims $\to$ Finals) with qualification criteria.
               </p>
@@ -282,7 +282,7 @@ export default function NewQuizPage() {
                 <Zap className="w-5 h-5 text-blue-600" />
                 {quizType === 'single' && <CheckCircle2 className="w-4 h-4 text-blue-600" />}
               </div>
-              <h3 className="font-black text-sm text-slate-900">Single Competition</h3>
+              <h3 className="font-bold text-sm text-slate-900">Single Competition</h3>
               <p className="text-xs text-slate-500 mt-1 font-medium">
                 Standalone single-round quiz challenge with instant final leaderboard.
               </p>
@@ -304,7 +304,7 @@ export default function NewQuizPage() {
                         : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
-                    <p className="font-black text-slate-900 mb-1">🕒 Automatic Progression (Scheduled)</p>
+                    <p className="font-bold text-slate-900 mb-1">🕒 Automatic Progression (Scheduled)</p>
                     <p className="text-[11px] text-slate-500 font-medium">
                       Rounds automatically unlock at set date/time for qualified contestants.
                     </p>
@@ -319,7 +319,7 @@ export default function NewQuizPage() {
                         : 'bg-slate-50 border-slate-200 text-slate-600'
                     }`}
                   >
-                    <p className="font-black text-slate-900 mb-1">🛡️ Manual Progression (Organizer Controlled)</p>
+                    <p className="font-bold text-slate-900 mb-1">🛡️ Manual Progression (Organizer Controlled)</p>
                     <p className="text-[11px] text-slate-500 font-medium">
                       Organizer manually reviews and triggers next level qualification.
                     </p>
@@ -329,14 +329,14 @@ export default function NewQuizPage() {
 
               {/* Initial Round Setup */}
               <div className="space-y-4 pt-2">
-                <h3 className="text-xs font-black uppercase tracking-wider text-slate-500">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                   Initial Tournament Rounds & Qualification Criteria
                 </h3>
 
                 {/* Round 1 */}
                 <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-[#e05a38]">Level 1 (Prelims / Qualifier)</span>
+                    <span className="text-xs font-bold text-[#e05a38]">Level 1 (Prelims / Qualifier)</span>
                     <span className="text-[11px] text-[#15803d] font-bold">Active upon publish</span>
                   </div>
 
@@ -374,7 +374,7 @@ export default function NewQuizPage() {
                 {/* Round 2 */}
                 <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-purple-700">Level 2 (Grand Finals)</span>
+                    <span className="text-xs font-bold text-purple-700">Level 2 (Grand Finals)</span>
                     <span className="text-[11px] text-[#b45309] font-bold">Unlocks automatically</span>
                   </div>
 
@@ -424,7 +424,7 @@ export default function NewQuizPage() {
 
         {/* Section 3: Pointing & Scoring Criteria */}
         <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
-          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Zap className="w-5 h-5 text-amber-500" />
             3. Pointing & Scoring Engine
           </h2>
@@ -443,7 +443,7 @@ export default function NewQuizPage() {
                 <Clock className="w-5 h-5 text-amber-500" />
                 {scoringStrategy === 'time_decay' && <CheckCircle2 className="w-4 h-4 text-amber-500" />}
               </div>
-              <h3 className="font-black text-sm text-slate-900">Time-Decay Dynamic Scoring</h3>
+              <h3 className="font-bold text-sm text-slate-900">Time-Decay Dynamic Scoring</h3>
               <p className="text-xs text-slate-500 mt-1 font-medium">
                 Max points decrement continuously as question timer ticks down.
               </p>
@@ -462,7 +462,7 @@ export default function NewQuizPage() {
                 <Zap className="w-5 h-5 text-[#e05a38]" />
                 {scoringStrategy === 'fixed' && <CheckCircle2 className="w-4 h-4 text-[#e05a38]" />}
               </div>
-              <h3 className="font-black text-sm text-slate-900">Fixed Pointing</h3>
+              <h3 className="font-bold text-sm text-slate-900">Fixed Pointing</h3>
               <p className="text-xs text-slate-500 mt-1 font-medium">
                 Constant points awarded for correct answers regardless of response speed.
               </p>
@@ -498,7 +498,7 @@ export default function NewQuizPage() {
 
         {/* Section 4: Randomization & Referral System */}
         <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
-          <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
             <Shuffle className="w-5 h-5 text-pink-500" />
             4. Randomization & Referral Incentives
           </h2>
@@ -506,7 +506,7 @@ export default function NewQuizPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Shuffling */}
             <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-              <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Anti-Cheat Randomization</h3>
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Anti-Cheat Randomization</h3>
               
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -531,7 +531,7 @@ export default function NewQuizPage() {
 
             {/* Referral Settings */}
             <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-              <h3 className="text-xs font-black text-slate-700 uppercase tracking-wider">Referral Rewards</h3>
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Referral Rewards</h3>
 
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
@@ -569,7 +569,7 @@ export default function NewQuizPage() {
           <button
             type="submit"
             disabled={isSubmitting || !quota.allowed}
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] disabled:opacity-50 text-white font-black text-xs shadow-xl shadow-[#e05a38]/20 transition hover:scale-105"
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] disabled:opacity-50 text-white font-bold text-xs shadow-xl shadow-[#e05a38]/20 transition hover:scale-105"
           >
             <Sparkles className="w-4 h-4" />
             {isSubmitting ? 'Creating Competition...' : 'Create & Proceed to Questions'}

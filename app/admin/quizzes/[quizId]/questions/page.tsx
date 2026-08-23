@@ -162,10 +162,10 @@ export default function ManageQuestionsPage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <span className="text-xs font-black text-[#e05a38] uppercase tracking-wider">
+          <span className="text-xs font-bold text-[#e05a38] uppercase tracking-wider">
             {quiz.title} • Questions Manager
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">Question Bank & Media</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-1">Question Bank & Media</h1>
         </div>
 
         <div className="flex items-center gap-3">
@@ -183,7 +183,7 @@ export default function ManageQuestionsPage() {
                 resetForm();
                 setIsAddingNew(true);
               }}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-lg shadow-[#e05a38]/20 transition"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition"
             >
               <Plus className="w-4 h-4" />
               Add Question
@@ -197,7 +197,7 @@ export default function ManageQuestionsPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setSelectedRoundFilter('all')}
-            className={`px-4 py-2 rounded-2xl text-xs font-black transition ${
+            className={`px-4 py-2 rounded-2xl text-xs font-bold transition ${
               selectedRoundFilter === 'all'
                 ? 'bg-[#e05a38] text-white shadow-sm'
                 : 'bg-white border border-[#ebdcd1] text-slate-700 hover:text-slate-950'
@@ -209,7 +209,7 @@ export default function ManageQuestionsPage() {
             <button
               key={r.id}
               onClick={() => setSelectedRoundFilter(r.id)}
-              className={`px-4 py-2 rounded-2xl text-xs font-black transition ${
+              className={`px-4 py-2 rounded-2xl text-xs font-bold transition ${
                 selectedRoundFilter === r.id
                   ? 'bg-purple-600 text-white shadow-sm'
                   : 'bg-white border border-[#ebdcd1] text-slate-700 hover:text-slate-950'
@@ -225,7 +225,7 @@ export default function ManageQuestionsPage() {
       {isAddingNew && (
         <div className="p-8 rounded-3xl bg-white border-2 border-[#e05a38] space-y-6 shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#e05a38]" />
               {editingQuestionId ? 'Edit Question' : 'Add New Question'}
             </h2>
@@ -324,13 +324,13 @@ export default function ManageQuestionsPage() {
             {/* MCQ Options List */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-black text-slate-700 uppercase tracking-wider">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                   Options & Correct Answer Selection
                 </label>
                 <button
                   type="button"
                   onClick={handleAddOption}
-                  className="text-xs font-black text-[#e05a38] hover:underline flex items-center gap-1"
+                  className="text-xs font-bold text-[#e05a38] hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Add Option
                 </button>
@@ -344,7 +344,7 @@ export default function ManageQuestionsPage() {
                       <button
                         type="button"
                         onClick={() => handleSetCorrectOption(opt.id)}
-                        className={`w-9 h-9 rounded-2xl font-black text-xs flex items-center justify-center shrink-0 transition ${
+                        className={`w-9 h-9 rounded-2xl font-bold text-xs flex items-center justify-center shrink-0 transition ${
                           opt.is_correct
                             ? 'bg-[#15803d] text-white shadow-md'
                             : 'bg-slate-200 text-slate-600 hover:bg-slate-300'
@@ -405,7 +405,7 @@ export default function ManageQuestionsPage() {
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-lg shadow-[#e05a38]/20 transition"
+                className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition"
               >
                 {editingQuestionId ? 'Update Question' : 'Save Question'}
               </button>
@@ -419,7 +419,7 @@ export default function ManageQuestionsPage() {
         {filteredQuestions.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-3xl border border-[#ebdcd1] shadow-sm space-y-3">
             <HelpCircle className="w-12 h-12 text-slate-300 mx-auto" />
-            <h2 className="text-base font-black text-slate-900">No questions found</h2>
+            <h2 className="text-base font-bold text-slate-900">No questions found</h2>
             <p className="text-xs text-slate-500 font-medium">Click "Add Question" above to populate your quiz.</p>
           </div>
         ) : (
@@ -431,14 +431,14 @@ export default function ManageQuestionsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 rounded-xl bg-[#fff0ea] text-[#e05a38] text-xs font-black flex items-center justify-center">
+                    <span className="w-6 h-6 rounded-xl bg-[#fff0ea] text-[#e05a38] text-xs font-bold flex items-center justify-center">
                       #{idx + 1}
                     </span>
-                    <span className="text-xs font-black text-slate-900">{q.points} Points</span>
+                    <span className="text-xs font-bold text-slate-900">{q.points} Points</span>
                     <span className="text-xs text-slate-400">•</span>
                     <span className="text-xs text-slate-500 font-bold">{q.time_limit_sec}s timer</span>
                   </div>
-                  <h3 className="text-base font-black text-slate-900 leading-relaxed">{q.question_text}</h3>
+                  <h3 className="text-base font-bold text-slate-900 leading-relaxed">{q.question_text}</h3>
                 </div>
 
                 <div className="flex items-center gap-1.5">

@@ -37,11 +37,11 @@ export default function ExplorePage() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fff0ea] border border-[#ffd5c4] text-[#c2411d] text-xs font-black uppercase tracking-wider mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#fff0ea] border border-[#ffd5c4] text-[#c2411d] text-xs font-bold uppercase tracking-wider mb-2">
             <Trophy className="w-3.5 h-3.5 text-[#e05a38]" />
             Live Arena Directory
           </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900">Explore Competitions</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Explore Competitions</h1>
           <p className="text-slate-600 text-sm mt-1">
             Discover single-round challenges, speed-decay arenas, and multi-level championships.
           </p>
@@ -49,7 +49,7 @@ export default function ExplorePage() {
         <div className="flex items-center gap-2">
           <Link
             href="/admin/quizzes/new"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-xs font-black text-white transition shadow-md shadow-[#e05a38]/20"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-xs font-bold text-white transition shadow-md shadow-[#e05a38]/20"
           >
             <Sparkles className="w-4 h-4" />
             Create Competition
@@ -99,7 +99,7 @@ export default function ExplorePage() {
       {filteredQuizzes.length === 0 ? (
         <div className="text-center py-20 bg-white rounded-3xl border border-[#ebdcd1] shadow-sm space-y-3">
           <Layers className="w-12 h-12 text-slate-300 mx-auto" />
-          <h2 className="text-lg font-black text-slate-800">No competitions found</h2>
+          <h2 className="text-lg font-bold text-slate-800">No competitions found</h2>
           <p className="text-xs text-slate-500">Try adjusting your search terms or filters.</p>
         </div>
       ) : (
@@ -114,7 +114,7 @@ export default function ExplorePage() {
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2">
                     <span
-                      className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         quiz.quiz_type === 'tournament'
                           ? 'bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe]'
                           : 'bg-[#eff6ff] text-[#2563eb] border border-[#bfdbfe]'
@@ -123,12 +123,12 @@ export default function ExplorePage() {
                       {quiz.quiz_type}
                     </span>
 
-                    <span className="px-3 py-1 rounded-full text-[10px] font-black bg-[#fffbeb] text-[#b45309] border border-[#fde68a]">
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#fffbeb] text-[#b45309] border border-[#fde68a]">
                       {quiz.scoring_strategy === 'time_decay' ? '⚡ Time-Decay' : '🎯 Fixed Points'}
                     </span>
                   </div>
 
-                  <h2 className="text-lg font-black text-slate-900 group-hover:text-[#e05a38] transition leading-tight">
+                  <h2 className="text-lg font-bold text-slate-900 group-hover:text-[#e05a38] transition leading-tight">
                     {quiz.title}
                   </h2>
                   <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">{quiz.description}</p>
@@ -155,7 +155,7 @@ export default function ExplorePage() {
                 </div>
 
                 {quiz.enable_referral_bonus && (
-                  <div className="px-3.5 py-2 rounded-2xl bg-[#f0fdf4] border border-[#bbf7d0] text-[#15803d] text-[11px] font-black flex items-center justify-between">
+                  <div className="px-3.5 py-2 rounded-2xl bg-[#f0fdf4] border border-[#bbf7d0] text-[#15803d] text-[11px] font-bold flex items-center justify-between">
                     <span>Referral Reward</span>
                     <strong>+{quiz.referral_bonus_points} pts</strong>
                   </div>
@@ -168,7 +168,7 @@ export default function ExplorePage() {
                 </span>
                 <Link
                   href={`/quiz/${quiz.id}`}
-                  className="inline-flex items-center gap-1.5 text-xs font-black text-[#e05a38] hover:text-[#c84a29]"
+                  className="inline-flex items-center gap-1.5 text-xs font-bold text-[#e05a38] hover:text-[#c84a29]"
                 >
                   View Details <ArrowRight className="w-3.5 h-3.5" />
                 </Link>

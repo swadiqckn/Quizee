@@ -60,22 +60,22 @@ export function Navbar() {
           <Link href="/" className="flex items-center gap-1 group">
             {/* Tile Blocks Logo like Quizly style */}
             <div className="flex items-center gap-1">
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm group-hover:scale-105 transition-transform">
+              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
                 Q
               </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm group-hover:scale-105 transition-transform delay-75">
+              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-75">
                 u
               </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm group-hover:scale-105 transition-transform delay-100">
+              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-100">
                 i
               </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm group-hover:scale-105 transition-transform delay-150">
+              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-150">
                 z
               </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm group-hover:scale-105 transition-transform delay-200">
+              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-200">
                 e
               </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm group-hover:scale-105 transition-transform delay-300">
+              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-300">
                 e
               </span>
             </div>
@@ -166,7 +166,7 @@ export function Navbar() {
                   onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white border border-[#ebdcd1] hover:border-[#e05a38]/50 text-xs font-semibold text-slate-800 shadow-sm transition"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#ffebe3] text-[#e05a38] flex items-center justify-center text-[11px] font-black">
+                  <div className="w-6 h-6 rounded-full bg-[#ffebe3] text-[#e05a38] flex items-center justify-center text-[11px] font-bold">
                     {currentUser.username?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div className="text-left hidden sm:block">
@@ -179,7 +179,7 @@ export function Navbar() {
                 {roleDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-64 rounded-2xl bg-white border border-[#ebdcd1] shadow-2xl p-2 z-50">
                     <div className="px-3 py-2 border-b border-slate-100">
-                      <p className="text-xs font-extrabold text-slate-900">@{currentUser.username}</p>
+                      <p className="text-xs font-bold text-slate-900">@{currentUser.username}</p>
                       <p className="text-[11px] text-slate-500 truncate">{currentUser.full_name || 'Contestant'}</p>
                     </div>
 
@@ -231,7 +231,7 @@ export function Navbar() {
 
               <Link
                 href="/register"
-                className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-extrabold shadow-md shadow-[#e05a38]/25 transition-all hover:scale-105 flex items-center gap-1.5"
+                className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold shadow-md shadow-[#e05a38]/25 transition-all hover:scale-105 flex items-center gap-1.5"
               >
                 <Building2 className="w-3.5 h-3.5" />
                 Register Organization

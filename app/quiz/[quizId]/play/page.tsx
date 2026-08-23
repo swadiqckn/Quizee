@@ -176,7 +176,7 @@ function QuizPlayContent() {
           </div>
 
           <div className="space-y-2">
-            <h1 className="text-2xl font-black text-slate-900">Join Competition Arena</h1>
+            <h1 className="text-2xl font-bold text-slate-900">Join Competition Arena</h1>
             <p className="text-xs text-slate-500">
               Sign in with Google to record your live score and tournament rankings for{' '}
               <strong className="text-slate-900">{quiz.title}</strong>.
@@ -190,7 +190,7 @@ function QuizPlayContent() {
                 setQuestionStartTime(Date.now());
               }}
               type="button"
-              className="w-full py-4 px-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-xl shadow-[#e05a38]/25 transition flex items-center justify-center gap-3 hover:scale-[1.02]"
+              className="w-full py-4 px-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-xl shadow-[#e05a38]/25 transition flex items-center justify-center gap-3 hover:scale-[1.02]"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -223,7 +223,7 @@ function QuizPlayContent() {
 
             <Link
               href={`/login`}
-              className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-black transition flex items-center justify-center gap-1.5"
+              className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-bold transition flex items-center justify-center gap-1.5"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span>Sign in with Username & Password</span>
@@ -238,7 +238,7 @@ function QuizPlayContent() {
     return (
       <div className="max-w-xl mx-auto py-20 text-center space-y-4">
         <AlertCircle className="w-12 h-12 text-amber-500 mx-auto" />
-        <h2 className="text-xl font-black text-slate-900">No Questions in this Level</h2>
+        <h2 className="text-xl font-bold text-slate-900">No Questions in this Level</h2>
         <p className="text-xs text-slate-500">Questions are being added by the organizers.</p>
         <button
           onClick={() => router.push(`/quiz/${quizId}`)}
@@ -257,10 +257,10 @@ function QuizPlayContent() {
       {/* Arena Top Bar */}
       <div className="p-4 sm:p-5 rounded-3xl bg-white border border-[#ebdcd1] flex flex-wrap items-center justify-between gap-4 shadow-sm">
         <div className="space-y-0.5">
-          <span className="text-[10px] font-black text-[#e05a38] uppercase tracking-wider">
+          <span className="text-[10px] font-bold text-[#e05a38] uppercase tracking-wider">
             {currentRound ? currentRound.title : quiz.title}
           </span>
-          <h1 className="text-sm font-black text-slate-900">
+          <h1 className="text-sm font-bold text-slate-900">
             Question {currentIndex + 1} of {activeQuestions.length}
           </h1>
         </div>
@@ -271,7 +271,7 @@ function QuizPlayContent() {
             <Zap className="w-4 h-4 text-amber-500" />
             <div>
               <span className="text-[10px] text-slate-500 font-bold block leading-none">Potential Score</span>
-              <span className="text-xs font-black text-[#b45309] font-mono">
+              <span className="text-xs font-bold text-[#b45309] font-mono">
                 {currentPointsPotential} pts
               </span>
             </div>
@@ -285,7 +285,7 @@ function QuizPlayContent() {
             }`}
           >
             <Clock className="w-4 h-4 text-[#e05a38]" />
-            <span className="text-sm font-black font-mono">{timeRemaining}s</span>
+            <span className="text-sm font-bold font-mono">{timeRemaining}s</span>
           </div>
         </div>
       </div>
@@ -300,7 +300,7 @@ function QuizPlayContent() {
 
       {/* Question Card */}
       <div className="p-6 sm:p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-xl">
-        <h2 className="text-lg sm:text-xl font-black text-slate-900 leading-relaxed">
+        <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-relaxed">
           {currentQuestion.question_text}
         </h2>
 
@@ -333,7 +333,7 @@ function QuizPlayContent() {
                 }`}
               >
                 <span
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black font-mono shrink-0 ${
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold font-mono shrink-0 ${
                     isSelected
                       ? 'bg-[#e05a38] text-white'
                       : 'bg-slate-200 text-slate-700'
@@ -353,7 +353,7 @@ function QuizPlayContent() {
           <button
             onClick={handleNextQuestion}
             disabled={selectedForCurrent.length === 0 || isSubmitting}
-            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] disabled:opacity-40 text-white font-black text-xs shadow-xl shadow-[#e05a38]/25 transition hover:scale-105"
+            className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] disabled:opacity-40 text-white font-bold text-xs shadow-xl shadow-[#e05a38]/25 transition hover:scale-105"
           >
             <span>
               {currentIndex + 1 === activeQuestions.length ? 'Submit Final Answers' : 'Confirm & Next Question'}

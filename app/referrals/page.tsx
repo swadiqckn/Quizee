@@ -34,7 +34,7 @@ export default function ReferralsPage() {
           <Gift className="w-8 h-8" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900">Sign In to Access Referral Rewards</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Sign In to Access Referral Rewards</h1>
           <p className="text-xs text-slate-500 max-w-md mx-auto">
             Get your unique referral link, invite friends and earn bonus points for tournaments.
           </p>
@@ -42,7 +42,7 @@ export default function ReferralsPage() {
         <div className="flex justify-center gap-3 pt-2">
           <Link
             href="/login"
-            className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-md shadow-[#e05a38]/20 transition"
+            className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-md shadow-[#e05a38]/20 transition"
           >
             Sign In with Google
           </Link>
@@ -91,11 +91,11 @@ export default function ReferralsPage() {
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#fff0ea] border border-[#ffd5c4] text-[#c2411d] text-xs font-black uppercase tracking-wider">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#fff0ea] border border-[#ffd5c4] text-[#c2411d] text-xs font-bold uppercase tracking-wider">
           <Gift className="w-3.5 h-3.5 text-[#e05a38]" />
           Viral Referral & Growth Rewards
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-slate-900">Invite Friends & Earn Points</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">Invite Friends & Earn Points</h1>
         <p className="text-slate-600 text-sm">
           Share your referral link with colleagues and classmates. Earn leaderboard points and boost tournament qualification standings!
         </p>
@@ -108,7 +108,7 @@ export default function ReferralsPage() {
             <span className="text-xs text-slate-500 font-bold">Total Friends Referred</span>
             <Users className="w-4 h-4 text-[#e05a38]" />
           </div>
-          <p className="text-3xl font-black text-slate-900">{currentUser.total_referrals}</p>
+          <p className="text-3xl font-bold text-slate-900">{currentUser.total_referrals}</p>
           <p className="text-[11px] text-slate-400 font-medium">Active registered referees</p>
         </div>
 
@@ -117,7 +117,7 @@ export default function ReferralsPage() {
             <span className="text-xs text-slate-500 font-bold">Referral Points Earned</span>
             <Sparkles className="w-4 h-4 text-amber-500" />
           </div>
-          <p className="text-3xl font-black text-[#b45309]">{currentUser.total_referrals * 25} pts</p>
+          <p className="text-3xl font-bold text-[#b45309]">{currentUser.total_referrals * 25} pts</p>
           <p className="text-[11px] text-slate-400 font-medium">+25 pts credited per active invite</p>
         </div>
 
@@ -126,7 +126,7 @@ export default function ReferralsPage() {
             <span className="text-xs text-slate-500 font-bold">Your Global Balance</span>
             <Award className="w-4 h-4 text-[#e05a38]" />
           </div>
-          <p className="text-3xl font-black text-[#e05a38]">{currentUser.total_points} pts</p>
+          <p className="text-3xl font-bold text-[#e05a38]">{currentUser.total_points} pts</p>
           <p className="text-[11px] text-slate-400 font-medium">Includes quiz scores + referral bonuses</p>
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function ReferralsPage() {
         {/* Share Card */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
           <div className="space-y-1">
-            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Share2 className="w-5 h-5 text-[#e05a38]" />
               Your Shareable Invite Link
             </h2>
@@ -146,7 +146,7 @@ export default function ReferralsPage() {
           </div>
 
           <div className="space-y-3">
-            <label className="text-xs font-black text-slate-600 uppercase tracking-wider">
+            <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
               Referral Code: <strong className="text-slate-900 font-mono">{currentUser.referral_code}</strong>
             </label>
 
@@ -159,7 +159,7 @@ export default function ReferralsPage() {
               />
               <button
                 onClick={copyToClipboard}
-                className="px-4 py-2.5 rounded-xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-black transition flex items-center gap-1.5 shrink-0"
+                className="px-4 py-2.5 rounded-xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold transition flex items-center gap-1.5 shrink-0"
               >
                 {copied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? 'Copied!' : 'Copy Link'}
@@ -168,7 +168,7 @@ export default function ReferralsPage() {
           </div>
 
           <div className="p-4 rounded-2xl bg-[#fff0ea] border border-[#ffd8cb] text-xs text-[#c2411d] space-y-1 font-medium">
-            <p className="font-black">How rewards work:</p>
+            <p className="font-bold">How rewards work:</p>
             <ul className="list-disc list-inside space-y-0.5 text-[11px] text-slate-700">
               <li>You get +25 points immediately when a friend uses your link.</li>
               <li>Your friend receives a +10 points welcome bonus.</li>
@@ -180,7 +180,7 @@ export default function ReferralsPage() {
         {/* Claim Friend's Code Card */}
         <div className="p-6 sm:p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
           <div className="space-y-1">
-            <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Gift className="w-5 h-5 text-[#e05a38]" />
               Claim a Friend's Referral Code
             </h2>
@@ -202,7 +202,7 @@ export default function ReferralsPage() {
                 />
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-black transition shadow-md shadow-[#e05a38]/20"
+                  className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold transition shadow-md shadow-[#e05a38]/20"
                 >
                   Apply Code
                 </button>
@@ -236,7 +236,7 @@ export default function ReferralsPage() {
 
       {/* Referral History Table */}
       <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-4 shadow-sm">
-        <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-[#e05a38]" />
           Your Referral Activity
         </h2>
@@ -251,12 +251,12 @@ export default function ReferralsPage() {
             {myReferrals.map((ref) => (
               <div key={ref.id} className="py-3.5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-black text-slate-900">
+                  <p className="text-xs font-bold text-slate-900">
                     {ref.referee?.full_name || `@${ref.referee?.username}` || 'New Contestant'}
                   </p>
                   <p className="text-[10px] text-slate-500 font-medium">Joined {formatDate(ref.created_at)}</p>
                 </div>
-                <div className="px-3 py-1 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] text-[#15803d] text-xs font-black">
+                <div className="px-3 py-1 rounded-full bg-[#f0fdf4] border border-[#bbf7d0] text-[#15803d] text-xs font-bold">
                   +{ref.bonus_points_awarded} pts
                 </div>
               </div>

@@ -38,7 +38,7 @@ export default function QuizDetailPage() {
     return (
       <div className="max-w-4xl mx-auto px-4 py-20 text-center space-y-4">
         <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
-        <h2 className="text-xl font-black text-slate-900">Competition Not Found</h2>
+        <h2 className="text-xl font-bold text-slate-900">Competition Not Found</h2>
         <Link href="/explore" className="text-[#e05a38] text-xs font-bold hover:underline">
           Back to Explore
         </Link>
@@ -58,7 +58,7 @@ export default function QuizDetailPage() {
         <div className="relative z-10 space-y-4 max-w-3xl">
           <div className="flex flex-wrap items-center gap-2.5">
             <span
-              className={`px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+              className={`px-3.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                 quiz.quiz_type === 'tournament'
                   ? 'bg-[#f5f3ff] text-[#7c3aed] border border-[#ddd6fe]'
                   : 'bg-[#eff6ff] text-[#2563eb] border border-[#bfdbfe]'
@@ -67,7 +67,7 @@ export default function QuizDetailPage() {
               {quiz.quiz_type}
             </span>
 
-            <span className="px-3.5 py-1 rounded-full text-xs font-black bg-[#fffbeb] text-[#b45309] border border-[#fde68a]">
+            <span className="px-3.5 py-1 rounded-full text-xs font-bold bg-[#fffbeb] text-[#b45309] border border-[#fde68a]">
               {quiz.scoring_strategy === 'time_decay' ? '⚡ Time-Decay Scoring' : '🎯 Fixed Points'}
             </span>
 
@@ -78,7 +78,7 @@ export default function QuizDetailPage() {
             )}
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight">
             {quiz.title}
           </h1>
 
@@ -88,22 +88,22 @@ export default function QuizDetailPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-4">
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <p className="text-[11px] text-slate-500 font-bold">Time / Question</p>
-              <p className="text-base font-black text-slate-900 mt-0.5">{quiz.time_limit_per_question_sec}s</p>
+              <p className="text-base font-bold text-slate-900 mt-0.5">{quiz.time_limit_per_question_sec}s</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <p className="text-[11px] text-slate-500 font-bold">Base Points</p>
-              <p className="text-base font-black text-[#e05a38] mt-0.5">+{quiz.base_points_per_question} pts</p>
+              <p className="text-base font-bold text-[#e05a38] mt-0.5">+{quiz.base_points_per_question} pts</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <p className="text-[11px] text-slate-500 font-bold">Option Shuffle</p>
-              <p className="text-base font-black text-slate-900 mt-0.5">{quiz.shuffle_options ? 'Enabled' : 'Disabled'}</p>
+              <p className="text-base font-bold text-slate-900 mt-0.5">{quiz.shuffle_options ? 'Enabled' : 'Disabled'}</p>
             </div>
 
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
               <p className="text-[11px] text-slate-500 font-bold">Referral Bonus</p>
-              <p className="text-base font-black text-[#15803d] mt-0.5">
+              <p className="text-base font-bold text-[#15803d] mt-0.5">
                 {quiz.enable_referral_bonus ? `+${quiz.referral_bonus_points} pts` : 'None'}
               </p>
             </div>
@@ -113,7 +113,7 @@ export default function QuizDetailPage() {
           <div className="pt-6 flex flex-wrap items-center gap-4">
             <Link
               href={`/quiz/${quiz.id}/play${activeRound ? `?roundId=${activeRound.id}` : ''}`}
-              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-sm shadow-xl shadow-[#e05a38]/25 transition-all hover:scale-105"
+              className="inline-flex items-center gap-2.5 px-8 py-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-sm shadow-xl shadow-[#e05a38]/25 transition-all hover:scale-105"
             >
               <Zap className="w-4 h-4" />
               {activeRound ? `Enter Arena: ${activeRound.title}` : 'Enter Competition Arena'}
@@ -122,7 +122,7 @@ export default function QuizDetailPage() {
 
             <Link
               href="/referrals"
-              className="inline-flex items-center gap-2 px-5 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-black transition"
+              className="inline-flex items-center gap-2 px-5 py-4 rounded-2xl bg-white hover:bg-slate-50 border-2 border-slate-900 text-slate-900 text-xs font-bold transition"
             >
               <Gift className="w-4 h-4 text-[#e05a38]" />
               Invite Friends (+{quiz.referral_bonus_points || 10} pts)
@@ -136,12 +136,12 @@ export default function QuizDetailPage() {
         <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
-              <h2 className="text-lg font-black text-slate-900">Tournament Levels & Progression</h2>
+              <h2 className="text-lg font-bold text-slate-900">Tournament Levels & Progression</h2>
               <p className="text-xs text-slate-500 mt-0.5">
                 Progression mode: <strong className="text-slate-800 uppercase">{quiz.progression_mode}</strong>
               </p>
             </div>
-            <span className="px-3.5 py-1.5 rounded-full bg-[#f5f3ff] border border-[#ddd6fe] text-[#7c3aed] text-xs font-black">
+            <span className="px-3.5 py-1.5 rounded-full bg-[#f5f3ff] border border-[#ddd6fe] text-[#7c3aed] text-xs font-bold">
               {quizRounds.length} Rounds Scheduled
             </span>
           </div>
@@ -157,11 +157,11 @@ export default function QuizDetailPage() {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-[#15803d] uppercase tracking-wider">
+                  <span className="text-xs font-bold text-[#15803d] uppercase tracking-wider">
                     Level {round.round_number}
                   </span>
                   <span
-                    className={`px-2.5 py-1 rounded-xl text-[10px] font-black uppercase ${
+                    className={`px-2.5 py-1 rounded-xl text-[10px] font-bold uppercase ${
                       round.status === 'active'
                         ? 'bg-[#dcfce7] text-[#15803d]'
                         : 'bg-slate-200 text-slate-600'
@@ -172,7 +172,7 @@ export default function QuizDetailPage() {
                 </div>
 
                 <div>
-                  <h3 className="text-base font-black text-slate-900">{round.title}</h3>
+                  <h3 className="text-base font-bold text-slate-900">{round.title}</h3>
                   <p className="text-xs text-slate-600 mt-1">
                     Pass criteria: <strong>{round.min_score_to_qualify || 0} min points</strong> &{' '}
                     <strong>{round.min_correct_to_qualify || 0} correct answers</strong>.
@@ -184,7 +184,7 @@ export default function QuizDetailPage() {
                   {round.status === 'active' && (
                     <Link
                       href={`/quiz/${quiz.id}/play?roundId=${round.id}`}
-                      className="inline-flex items-center gap-1 font-black text-[#e05a38] hover:underline"
+                      className="inline-flex items-center gap-1 font-bold text-[#e05a38] hover:underline"
                     >
                       Play Round <ArrowRight className="w-3.5 h-3.5" />
                     </Link>

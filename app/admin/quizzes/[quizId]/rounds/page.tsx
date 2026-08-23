@@ -114,10 +114,10 @@ export default function ManageTournamentRoundsPage() {
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <span className="text-xs font-black text-[#e05a38] uppercase tracking-wider">
+          <span className="text-xs font-bold text-[#e05a38] uppercase tracking-wider">
             {quiz.title} • Tournament Bracket
           </span>
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 mt-1">
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-1">
             Tournament Levels & Schedule
           </h1>
         </div>
@@ -128,7 +128,7 @@ export default function ManageTournamentRoundsPage() {
               reset();
               setIsAdding(true);
             }}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-lg shadow-[#e05a38]/20 transition"
+            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition"
           >
             <Plus className="w-4 h-4" />
             Add Tournament Level
@@ -140,7 +140,7 @@ export default function ManageTournamentRoundsPage() {
       {isAdding && (
         <div className="p-8 rounded-3xl bg-white border-2 border-[#e05a38] space-y-6 shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <h2 className="text-base font-black text-slate-900">
+            <h2 className="text-base font-bold text-slate-900">
               {editingRoundId ? 'Edit Tournament Level' : 'Add Tournament Level'}
             </h2>
             <button onClick={reset} className="text-xs font-bold text-slate-500 hover:text-slate-900">
@@ -225,7 +225,7 @@ export default function ManageTournamentRoundsPage() {
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-black text-xs shadow-md shadow-[#e05a38]/20 transition"
+                className="px-6 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-md shadow-[#e05a38]/20 transition"
               >
                 {editingRoundId ? 'Update Level' : 'Save Level'}
               </button>
@@ -243,12 +243,12 @@ export default function ManageTournamentRoundsPage() {
           >
             <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <span className="w-7 h-7 rounded-xl bg-[#fff0ea] text-[#e05a38] font-black text-xs flex items-center justify-center">
+                <span className="w-7 h-7 rounded-xl bg-[#fff0ea] text-[#e05a38] font-bold text-xs flex items-center justify-center">
                   L{round.round_number}
                 </span>
-                <h3 className="text-base font-black text-slate-900">{round.title}</h3>
+                <h3 className="text-base font-bold text-slate-900">{round.title}</h3>
                 <span
-                  className={`px-2.5 py-0.5 rounded-xl text-[10px] font-black uppercase ${
+                  className={`px-2.5 py-0.5 rounded-xl text-[10px] font-bold uppercase ${
                     round.status === 'active'
                       ? 'bg-[#dcfce7] text-[#15803d]'
                       : 'bg-slate-100 text-slate-600'

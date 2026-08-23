@@ -49,26 +49,26 @@ export default function LoginPage() {
         <div className="text-center space-y-2">
           {/* Logo Blocks */}
           <div className="flex items-center justify-center gap-1 mb-3">
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               Q
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               u
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               i
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               z
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               e
             </span>
-            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-black text-lg shadow-sm">
+            <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm">
               e
             </span>
           </div>
-          <h1 className="text-2xl font-black text-slate-900">Sign In to Quizee</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Sign In to Quizee</h1>
           <p className="text-xs text-slate-500">
             Sign in with Google or your username & password credentials.
           </p>
