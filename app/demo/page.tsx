@@ -20,6 +20,9 @@ import {
   Building2,
   Crown,
   Eye,
+  UserCheck,
+  LayoutDashboard,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   MOCK_ORGS,
@@ -33,10 +36,12 @@ import {
 } from '@/lib/mock-data';
 import { calculateQuestionPoints, evaluateQualification } from '@/lib/scoring';
 import { formatTimeMs, formatDate } from '@/lib/utils';
+import { useQuizPlatform } from '@/lib/context';
 
 export default function DemoPage() {
+  const { currentUser, switchUserRole } = useQuizPlatform();
   const [selectedDemoQuiz, setSelectedDemoQuiz] = useState(MOCK_QUIZZES[0]);
-  const [activeTab, setActiveTab] = useState<'quizzes' | 'arena' | 'scoring' | 'leaderboard' | 'orgs'>('quizzes');
+  const [activeTab, setActiveTab] = useState<'quizzes' | 'scoring' | 'leaderboard' | 'orgs' | 'roles'>('quizzes');
 
   // Interactive Scoring Simulator State
   const [simTimeTaken, setSimTimeTaken] = useState(6);
@@ -64,7 +69,7 @@ export default function DemoPage() {
           Interactive Platform Demo
         </h1>
         <p className="text-slate-600 text-sm sm:text-base">
-          Explore sample multi-level tournaments, simulated time-decay calculations, mock contestant leaderboards, and tenant organization architectures in sandbox mode.
+          Explore sample multi-level tournaments, simulated time-decay calculations, mock contestant leaderboards, and switch between role personas in sandbox mode.
         </p>
       </div>
 
@@ -117,6 +122,18 @@ export default function DemoPage() {
           <Building2 className="w-4 h-4" />
           Sample Tenant Workspaces
         </button>
+
+        <button
+          onClick={() => setActiveTab('roles')}
+          className={`px-5 py-2.5 rounded-2xl text-xs font-bold transition flex items-center gap-2 ${
+            activeTab === 'roles'
+              ? 'bg-[#e05a38] text-white shadow-md shadow-[#e05a38]/20'
+              : 'bg-white text-slate-700 hover:text-slate-950 border border-[#ebdcd1]'
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          Demo Role Switcher
+        </button>
       </div>
 
       {/* Tab 1: Demo Tournaments */}
@@ -138,76 +155,63 @@ export default function DemoPage() {
                     <span
                       className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
                         quiz.quiz_type === 'tournament'
-                          ? 'bg-[#f5f3ff] text-[#7c3aed]'
-                          : 'bg-[#eff6ff] text-[#2563eb]'
+                          ? 'bg-[#fef3c7] text-[#b45309] border border-[#fde68a]'
+                          : 'bg-slate-100 text-slate-700'
                       }`}
                     >
                       {quiz.quiz_type}
                     </span>
-                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#fffbeb] text-[#b45309]">
-                      {quiz.scoring_strategy === 'time_decay' ? '⚡ Time-Decay' : '🎯 Fixed'}
+                    <span className="px-3 py-1 rounded-full text-[10px] font-bold bg-[#fff0ea] text-[#c2411d]">
+                      {quiz.scoring_strategy}
                     </span>
                   </div>
 
-                  <h3 className="text-base font-bold text-slate-900">{quiz.title}</h3>
-                  <p className="text-xs text-slate-600 line-clamp-2">{quiz.description}</p>
+                  <h3 className="text-base font-bold text-slate-900 leading-snug">{quiz.title}</h3>
+                  <p className="text-xs text-slate-500 line-clamp-2">{quiz.description}</p>
                 </div>
 
-                <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-500">
-                  <span>{quiz.organisation?.name || 'Demo Tenant'}</span>
-                  <span className="text-[#e05a38] font-bold flex items-center gap-1">
-                    Select Demo <ArrowRight className="w-3.5 h-3.5" />
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-700">
+                  <span>{quiz.base_points_per_question} pts / question</span>
+                  <span className="text-[#e05a38] flex items-center gap-1">
+                    Inspect Demo <ArrowRight className="w-3.5 h-3.5" />
                   </span>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Selected Demo Quiz Breakdown */}
+          {/* Selected Demo Quiz Deep-Dive */}
           <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-xl space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
               <div>
                 <span className="text-xs font-bold text-[#e05a38] uppercase tracking-wider">
-                  Sample Tournament Inspection
+                  Tournament Structure Breakdown
                 </span>
                 <h2 className="text-2xl font-bold text-slate-900">{selectedDemoQuiz.title}</h2>
               </div>
-              <Link
-                href={`/quiz/${selectedDemoQuiz.id}`}
-                className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold shadow-md flex items-center gap-2 shrink-0"
-              >
-                <Play className="w-3.5 h-3.5" />
-                Launch Arena Simulation
-              </Link>
+              <span className="px-4 py-1.5 rounded-full bg-[#fef3c7] text-[#b45309] border border-[#fde68a] text-xs font-bold self-start">
+                Strategy: {selectedDemoQuiz.scoring_strategy}
+              </span>
             </div>
 
-            {/* Questions in this demo */}
-            <div className="space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Sample Question Bank ({MOCK_QUESTIONS.filter((q) => q.quiz_id === selectedDemoQuiz.id).length} Questions)
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {MOCK_QUESTIONS.filter((q) => q.quiz_id === selectedDemoQuiz.id).map((q, idx) => (
-                  <div key={q.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+            {/* Rounds Progression Flow */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                Multi-Level Tournament Rounds
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {MOCK_ROUNDS.filter((r) => r.quiz_id === selectedDemoQuiz.id).map((r) => (
+                  <div key={r.id} className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-[#e05a38]">Question #{idx + 1}</span>
-                      <span className="text-xs font-bold text-slate-500">{q.points} pts • {q.time_limit_sec}s timer</span>
+                      <span className="text-xs font-bold text-[#e05a38]">Round {r.round_number}</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-600 uppercase">
+                        {r.status}
+                      </span>
                     </div>
-                    <p className="text-xs font-bold text-slate-800">{q.question_text}</p>
-                    <div className="space-y-1 pt-1">
-                      {q.options.map((opt) => (
-                        <div
-                          key={opt.id}
-                          className={`px-3 py-1.5 rounded-xl text-[11px] font-medium flex items-center justify-between ${
-                            opt.is_correct
-                              ? 'bg-[#f0fdf4] text-[#15803d] font-bold border border-[#bbf7d0]'
-                              : 'bg-white text-slate-600 border border-slate-100'
-                          }`}
-                        >
-                          <span>{opt.text}</span>
-                          {opt.is_correct && <CheckCircle2 className="w-3.5 h-3.5 text-[#15803d]" />}
-                        </div>
-                      ))}
+                    <p className="text-sm font-bold text-slate-900">{r.title}</p>
+                    <div className="text-[11px] text-slate-500 font-medium space-y-0.5 pt-1">
+                      <p>• Min score to qualify: <strong className="text-slate-800">{r.min_score_to_qualify} pts</strong></p>
+                      <p>• Max qualifiers: <strong className="text-slate-800">{r.max_qualifiers} contestants</strong></p>
                     </div>
                   </div>
                 ))}
@@ -217,45 +221,42 @@ export default function DemoPage() {
         </div>
       )}
 
-      {/* Tab 2: Interactive Time-Decay Scoring Simulator */}
+      {/* Tab 2: Time Decay Simulator */}
       {activeTab === 'scoring' && (
-        <div className="p-8 sm:p-10 rounded-3xl bg-white border border-[#ebdcd1] shadow-xl space-y-8 max-w-4xl mx-auto">
-          <div className="space-y-2 text-center max-w-lg mx-auto">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#e05a38]">
-              Mathematical Engine
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">
-              Interactive Time-Decay Simulator
+        <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-xl space-y-8">
+          <div className="border-b border-slate-100 pb-4">
+            <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-[#e05a38]" />
+              Time-Decay Points Calculator Simulator
             </h2>
-            <p className="text-xs text-slate-500 font-medium">
-              Adjust response speed and observe dynamic millisecond points decrement in real-time.
+            <p className="text-xs text-slate-500 mt-1">
+              Test how speed and question duration dynamically award points using the formula: Points = Base × (Remaining Time / Total Time)
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center pt-4 border-t border-slate-100">
-            {/* Simulator Controls */}
-            <div className="space-y-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+            <div className="space-y-6">
               <div>
-                <label className="text-xs font-bold text-slate-700 block mb-1.5">Scoring Strategy</label>
-                <div className="grid grid-cols-2 gap-2">
+                <label className="text-xs font-bold text-slate-700 block mb-2">
+                  Scoring Strategy
+                </label>
+                <div className="grid grid-cols-2 gap-3">
                   <button
-                    type="button"
                     onClick={() => setSimStrategy('time_decay')}
-                    className={`py-2.5 rounded-xl text-xs font-bold border transition ${
+                    className={`py-3 px-4 rounded-2xl text-xs font-bold border transition ${
                       simStrategy === 'time_decay'
-                        ? 'bg-[#fff0ea] border-[#e05a38] text-[#c2411d]'
-                        : 'bg-slate-50 border-slate-200 text-slate-600'
+                        ? 'bg-[#ffebe3] border-[#ffd8cb] text-[#c2411d]'
+                        : 'bg-slate-50 border-slate-200 text-slate-700'
                     }`}
                   >
-                    ⚡ Time-Decay
+                    ⚡ Time-Decay (Speed Boost)
                   </button>
                   <button
-                    type="button"
                     onClick={() => setSimStrategy('fixed')}
-                    className={`py-2.5 rounded-xl text-xs font-bold border transition ${
+                    className={`py-3 px-4 rounded-2xl text-xs font-bold border transition ${
                       simStrategy === 'fixed'
-                        ? 'bg-[#fff0ea] border-[#e05a38] text-[#c2411d]'
-                        : 'bg-slate-50 border-slate-200 text-slate-600'
+                        ? 'bg-[#ffebe3] border-[#ffd8cb] text-[#c2411d]'
+                        : 'bg-slate-50 border-slate-200 text-slate-700'
                     }`}
                   >
                     🎯 Fixed Points
@@ -264,9 +265,9 @@ export default function DemoPage() {
               </div>
 
               <div>
-                <div className="flex items-center justify-between mb-1.5 text-xs font-bold text-slate-700">
-                  <span>Contestant Response Time</span>
-                  <span className="text-[#e05a38] font-mono text-sm">{simTimeTaken} seconds</span>
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 mb-2">
+                  <span>Time Taken by Contestant</span>
+                  <span className="text-[#e05a38] font-mono font-bold text-sm">{simTimeTaken} seconds</span>
                 </div>
                 <input
                   type="range"
@@ -275,27 +276,31 @@ export default function DemoPage() {
                   step="0.5"
                   value={simTimeTaken}
                   onChange={(e) => setSimTimeTaken(Number(e.target.value))}
-                  className="w-full accent-[#e05a38] cursor-pointer"
+                  className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#e05a38]"
                 />
+                <div className="flex justify-between text-[10px] text-slate-400 font-bold mt-1">
+                  <span>0s (Instant answer)</span>
+                  <span>{simTimeLimit}s (Time expired)</span>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Max Base Points</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Base Question Points</label>
                   <input
                     type="number"
                     value={simBasePoints}
                     onChange={(e) => setSimBasePoints(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold"
+                    className="w-full px-4 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-bold text-slate-700 block mb-1">Timer Window (Sec)</label>
+                  <label className="text-xs font-bold text-slate-700 block mb-1">Question Timer (Sec)</label>
                   <input
                     type="number"
                     value={simTimeLimit}
                     onChange={(e) => setSimTimeLimit(Number(e.target.value))}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-900 font-bold"
+                    className="w-full px-4 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold text-slate-900"
                   />
                 </div>
               </div>
@@ -397,6 +402,103 @@ export default function DemoPage() {
               </p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Tab 5: Demo Personas & Role Switcher */}
+      {activeTab === 'roles' && (
+        <div className="space-y-6">
+          <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-xl space-y-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <UserCheck className="w-5 h-5 text-[#e05a38]" />
+                Sandbox Role Personas
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                Select any role persona to preview how the platform interfaces and permissions behave for different users.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+              {/* Superadmin Persona */}
+              <div className={`p-6 rounded-3xl border-2 transition space-y-4 flex flex-col justify-between ${
+                currentUser?.role === 'superadmin' ? 'bg-[#fff9f6] border-[#e05a38] shadow-lg' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-purple-100 border border-purple-200 text-purple-700 flex items-center justify-center">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Superadmin Persona</h3>
+                    <p className="text-xs text-slate-500">Platform-wide system control, organization quotas & tenant oversight.</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => switchUserRole('superadmin')}
+                  className={`w-full py-2.5 rounded-xl text-xs font-bold transition ${
+                    currentUser?.role === 'superadmin'
+                      ? 'bg-[#e05a38] text-white shadow-sm'
+                      : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'
+                  }`}
+                >
+                  {currentUser?.role === 'superadmin' ? '✓ Active Role' : 'Switch to Superadmin'}
+                </button>
+              </div>
+
+              {/* Admin / Organizer Persona */}
+              <div className={`p-6 rounded-3xl border-2 transition space-y-4 flex flex-col justify-between ${
+                currentUser?.role === 'admin' ? 'bg-[#fff9f6] border-[#e05a38] shadow-lg' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-[#fff0ea] border border-[#ffd8cb] text-[#e05a38] flex items-center justify-center">
+                    <LayoutDashboard className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Admin (Organizer) Persona</h3>
+                    <p className="text-xs text-slate-500">Create tournaments, configure time-decay rules, bulk upload questions, live arena monitor.</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => switchUserRole('admin')}
+                  className={`w-full py-2.5 rounded-xl text-xs font-bold transition ${
+                    currentUser?.role === 'admin'
+                      ? 'bg-[#e05a38] text-white shadow-sm'
+                      : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'
+                  }`}
+                >
+                  {currentUser?.role === 'admin' ? '✓ Active Role' : 'Switch to Admin'}
+                </button>
+              </div>
+
+              {/* Participant / Contestant Persona */}
+              <div className={`p-6 rounded-3xl border-2 transition space-y-4 flex flex-col justify-between ${
+                currentUser?.role === 'participant' ? 'bg-[#fff9f6] border-[#e05a38] shadow-lg' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-100 border border-amber-200 text-amber-700 flex items-center justify-center">
+                    <Trophy className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-slate-900">Participant Persona</h3>
+                    <p className="text-xs text-slate-500">Live arena gameplay, speed-based points, round qualification, referral invite bonuses.</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => switchUserRole('participant')}
+                  className={`w-full py-2.5 rounded-xl text-xs font-bold transition ${
+                    currentUser?.role === 'participant'
+                      ? 'bg-[#e05a38] text-white shadow-sm'
+                      : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-700'
+                  }`}
+                >
+                  {currentUser?.role === 'participant' ? '✓ Active Role' : 'Switch to Participant'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

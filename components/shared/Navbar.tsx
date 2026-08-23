@@ -197,26 +197,7 @@ export function Navbar() {
                       <p className="text-[11px] text-slate-500 truncate">{currentUser.full_name || currentUser.email || 'Account'}</p>
                     </div>
 
-                    <div className="pt-2 pb-1 text-[11px] font-bold text-slate-400 px-3 uppercase tracking-wider">
-                      Switch Role
-                    </div>
-                    {(['participant', 'admin', 'superadmin'] as const).map((r) => (
-                      <button
-                        key={r}
-                        onClick={() => {
-                          switchUserRole(r);
-                          setRoleDropdownOpen(false);
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between hover:bg-[#fff3ed] transition ${
-                          currentUser.role === r ? 'bg-[#ffebe3] text-[#c2411d]' : 'text-slate-700'
-                        }`}
-                      >
-                        <span className="capitalize">{r === 'admin' ? 'Admin (Organizer)' : r}</span>
-                        {currentUser.role === r && <CheckCircle className="w-3.5 h-3.5 text-[#e05a38]" />}
-                      </button>
-                    ))}
-
-                    <div className="pt-2 mt-1 border-t border-slate-100 space-y-1">
+                    <div className="pt-2 space-y-1">
                       {isAdmin && (
                         <Link
                           href="/admin/billing"
