@@ -71,6 +71,7 @@ export interface Profile {
   avatar_url: string | null;
   role: UserRole;
   auth_provider?: 'credentials' | 'google';
+  google_id?: string | null;
   org_id: string | null;
   referral_code: string;
   referred_by: string | null;

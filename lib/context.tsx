@@ -43,7 +43,13 @@ interface QuizPlatformContextType {
   
   // Auth
   login: (username: string, password?: string) => { success: boolean; message?: string; user?: Profile };
-  loginWithGoogle: (role?: 'admin' | 'superadmin') => { success: boolean; user: Profile };
+  loginWithGoogle: (
+    options?:
+      | 'admin'
+      | 'superadmin'
+      | 'participant'
+      | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string }
+  ) => { success: boolean; user: Profile };
   register: (params: {
     username: string;
     password?: string;
@@ -128,13 +134,97 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     return { success: true, user: existing };
   };
 
-  const loginWithGoogle = (role: 'admin' | 'superadmin' = 'admin') => {
-    const googleUser: Profile = role === 'superadmin' ? MOCK_USERS[0] : MOCK_USERS[1];
-    setCurrentUser(googleUser);
+  const loginWithGoogle = (
+    options: 'admin' | 'superadmin' | 'participant' | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string } = 'admin'
+  ) => {
+    const role = typeof options === 'string' ? options : options.role || 'participant';
+    const referralCode = typeof options === 'object' ? options.referralCode : undefined;
+    const orgId = typeof options === 'object' ? options.orgId : undefined;
+
+    if (role === 'superadmin') {
+      const superUser = MOCK_USERS[0];
+      setCurrentUser(superUser);
+      try {
+        localStorage.setItem('quiz_current_user', JSON.stringify(superUser));
+      } catch (e) {}
+      return { success: true, user: superUser };
+    }
+
+    if (role === 'admin') {
+      const adminUser = MOCK_USERS[1];
+      setCurrentUser(adminUser);
+      try {
+        localStorage.setItem('quiz_current_user', JSON.stringify(adminUser));
+      } catch (e) {}
+      return { success: true, user: adminUser };
+    }
+
+    // Participant signing up / in with Google
+    const existingGoogleParticipant = allUsers.find(
+      (u) => u.auth_provider === 'google' && u.role === 'participant'
+    );
+
+    if (existingGoogleParticipant) {
+      setCurrentUser(existingGoogleParticipant);
+      try {
+        localStorage.setItem('quiz_current_user', JSON.stringify(existingGoogleParticipant));
+      } catch (e) {}
+      return { success: true, user: existingGoogleParticipant };
+    }
+
+    const newRefCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+    let referrer: Profile | undefined;
+    if (referralCode) {
+      referrer = allUsers.find((u) => u.referral_code.toUpperCase() === referralCode.trim().toUpperCase());
+    }
+
+    const newGoogleUser: Profile = {
+      id: `google-user-${Date.now()}`,
+      username: `alex_google_${Math.floor(Math.random() * 899 + 100)}`,
+      email: 'alex.contestant@gmail.com',
+      full_name: 'Alex Chen (Google)',
+      avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&auto=format&fit=crop&q=80',
+      role: 'participant',
+      auth_provider: 'google',
+      google_id: `g_${Date.now()}`,
+      org_id: orgId || activeOrg?.id || 'org-1',
+      referral_code: newRefCode,
+      referred_by: referrer ? referrer.id : null,
+      total_points: referrer ? 10 : 0,
+      total_referrals: 0,
+      created_at: new Date().toISOString(),
+    };
+
+    setAllUsers((prev) => [...prev, newGoogleUser]);
+    setCurrentUser(newGoogleUser);
+
+    if (referrer) {
+      const newReferral: Referral = {
+        id: `ref-${Date.now()}`,
+        referrer_id: referrer.id,
+        referee_id: newGoogleUser.id,
+        quiz_id: null,
+        bonus_points_awarded: 25,
+        created_at: new Date().toISOString(),
+        referee: newGoogleUser,
+        referrer: referrer,
+      };
+      setReferrals((prev) => [newReferral, ...prev]);
+
+      setAllUsers((prev) =>
+        prev.map((u) =>
+          u.id === referrer?.id
+            ? { ...u, total_points: u.total_points + 25, total_referrals: u.total_referrals + 1 }
+            : u
+        )
+      );
+    }
+
     try {
-      localStorage.setItem('quiz_current_user', JSON.stringify(googleUser));
+      localStorage.setItem('quiz_current_user', JSON.stringify(newGoogleUser));
     } catch (e) {}
-    return { success: true, user: googleUser };
+
+    return { success: true, user: newGoogleUser };
   };
 
   const register = ({

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Clock,
   Zap,
@@ -14,6 +15,8 @@ import {
   Maximize2,
   ChevronRight,
   Trophy,
+  LogIn,
+  Shield,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { shuffleArray } from '@/lib/scoring';
@@ -27,7 +30,7 @@ function QuizPlayContent() {
   const quizId = params.quizId as string;
   const roundId = searchParams.get('roundId');
 
-  const { quizzes, rounds, questions, submitQuizAttempt, currentUser } = useQuizPlatform();
+  const { quizzes, rounds, questions, submitQuizAttempt, currentUser, loginWithGoogle } = useQuizPlatform();
 
   const quiz = quizzes.find((q) => q.id === quizId);
   const currentRound = roundId ? rounds.find((r) => r.id === roundId) : null;
@@ -59,32 +62,33 @@ function QuizPlayContent() {
       qList = shuffleArray(qList);
     }
 
-    // Process option shuffling
-    const processedQuestions = qList.map((q) => {
-      let opts = [...q.options];
-      if (quiz?.shuffle_options) {
-        opts = shuffleArray(opts);
-      }
-      return { ...q, options: opts };
-    });
+    if (quiz?.shuffle_options) {
+      qList = qList.map((q) => ({
+        ...q,
+        options: shuffleArray(q.options),
+      }));
+    }
 
-    setActiveQuestions(processedQuestions);
+    setActiveQuestions(qList);
     setCurrentIndex(0);
-    setAnswersLog([]);
     setQuestionStartTime(Date.now());
   }, [quizId, roundId]);
 
-  const currentQuestion: Question | undefined = activeQuestions[currentIndex];
+  const currentQuestion = activeQuestions[currentIndex];
   const questionLimitSec = currentQuestion?.time_limit_sec || quiz?.time_limit_per_question_sec || 15;
   const basePoints = currentQuestion?.points || quiz?.base_points_per_question || 10;
 
-  // Timer Tick and Real-time Point Decay Engine
+  // Reset timer on question change
   useEffect(() => {
-    if (!currentQuestion || isSubmitting) return;
-
+    if (!currentQuestion || !currentUser) return;
+    setQuestionStartTime(Date.now());
     setTimeRemaining(questionLimitSec);
     setCurrentPointsPotential(basePoints);
-    setQuestionStartTime(Date.now());
+  }, [currentIndex, currentQuestion?.id, currentUser]);
+
+  // Real-time ticking & dynamic time-decay scoring calculation
+  useEffect(() => {
+    if (!currentQuestion || isSubmitting || !currentUser) return;
 
     const interval = setInterval(() => {
       const elapsedMs = Date.now() - questionStartTime;
@@ -108,13 +112,13 @@ function QuizPlayContent() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [currentIndex, currentQuestion, isSubmitting]);
+  }, [currentIndex, currentQuestion, isSubmitting, currentUser]);
 
   const handleSelectOption = (optionId: string) => {
     if (!currentQuestion) return;
     setSelectedAnswers((prev) => ({
       ...prev,
-      [currentQuestion.id]: [optionId], // Single select MCQ
+      [currentQuestion.id]: [optionId],
     }));
   };
 
@@ -141,12 +145,12 @@ function QuizPlayContent() {
     }
   };
 
-  const finishQuiz = (finalAnswers: typeof answersLog) => {
+  const finishQuiz = (finalAnswersLog: typeof answersLog) => {
     setIsSubmitting(true);
     const result = submitQuizAttempt({
       quizId,
       roundId: roundId || null,
-      answers: finalAnswers,
+      answers: finalAnswersLog,
     });
 
     setTimeout(() => {
@@ -158,6 +162,74 @@ function QuizPlayContent() {
     return (
       <div className="max-w-xl mx-auto py-20 text-center text-white">
         <p>Quiz not found.</p>
+      </div>
+    );
+  }
+
+  // Google Login Gate for Participants who start without being logged in
+  if (!currentUser) {
+    return (
+      <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6 text-center">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center mx-auto text-indigo-400">
+            <Trophy className="w-7 h-7" />
+          </div>
+
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-white">Join Competition Arena</h1>
+            <p className="text-xs text-slate-400">
+              Sign in with Google to record your live score and tournament rankings for{' '}
+              <strong className="text-white">{quiz.title}</strong>.
+            </p>
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <button
+              onClick={() => {
+                loginWithGoogle('participant');
+                setQuestionStartTime(Date.now());
+              }}
+              type="button"
+              className="w-full py-3.5 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs shadow-xl transition flex items-center justify-center gap-3 hover:scale-[1.02]"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path
+                  fill="#4285F4"
+                  d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.35 24 12 24z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15z"
+                />
+                <path
+                  fill="#EA4335"
+                  d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.35 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"
+                />
+              </svg>
+              <span>Continue with Google & Start</span>
+            </button>
+
+            <div className="relative flex items-center justify-center pt-2">
+              <div className="border-t border-slate-800 w-full"></div>
+              <span className="bg-slate-900 px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider shrink-0">
+                Or
+              </span>
+              <div className="border-t border-slate-800 w-full"></div>
+            </div>
+
+            <Link
+              href={`/login`}
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 text-xs font-semibold transition flex items-center justify-center gap-1.5"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign in with Username & Password</span>
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
@@ -183,35 +255,37 @@ function QuizPlayContent() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       {/* Arena Top Bar */}
-      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between gap-4 shadow-xl">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center font-bold text-indigo-300 text-sm">
-            {currentIndex + 1}/{activeQuestions.length}
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-white leading-tight">{quiz.title}</h2>
-            <p className="text-[11px] text-slate-400">
-              {currentRound ? currentRound.title : 'Single Round Arena'}
-            </p>
-          </div>
+      <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-xl">
+        <div className="space-y-0.5">
+          <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+            {currentRound ? currentRound.title : quiz.title}
+          </span>
+          <h1 className="text-sm font-extrabold text-white">
+            Question {currentIndex + 1} of {activeQuestions.length}
+          </h1>
         </div>
 
-        {/* Dynamic Scoring & Timer Widget */}
+        {/* Live Points Potential & Countdown */}
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-bold">
-            <Zap className="w-4 h-4 text-amber-400 animate-pulse" />
-            <span>Worth {currentPointsPotential} pts</span>
+          <div className="px-3.5 py-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-2">
+            <Zap className="w-4 h-4 text-amber-400" />
+            <div>
+              <span className="text-[10px] text-slate-400 block leading-none">Potential Score</span>
+              <span className="text-xs font-black text-amber-300 font-mono">
+                {currentPointsPotential} pts
+              </span>
+            </div>
           </div>
 
           <div
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border font-mono text-xs font-bold transition-colors ${
+            className={`px-3.5 py-1.5 rounded-xl border flex items-center gap-2 transition-colors ${
               timeRemaining <= 5
-                ? 'bg-rose-500/20 border-rose-500/40 text-rose-300 animate-pulse'
+                ? 'bg-rose-500/15 border-rose-500 text-rose-400 animate-pulse'
                 : 'bg-slate-950 border-slate-800 text-slate-200'
             }`}
           >
-            <Clock className="w-3.5 h-3.5" />
-            <span>{timeRemaining}s</span>
+            <Clock className="w-4 h-4 text-indigo-400" />
+            <span className="text-sm font-black font-mono">{timeRemaining}s</span>
           </div>
         </div>
       </div>
@@ -219,136 +293,89 @@ function QuizPlayContent() {
       {/* Progress Bar */}
       <div className="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-300"
+          className="bg-indigo-500 h-full transition-all duration-300 rounded-full"
           style={{ width: `${((currentIndex + 1) / activeQuestions.length) * 100}%` }}
         ></div>
       </div>
 
       {/* Question Card */}
-      {currentQuestion && (
-        <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-6">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">
-                Question {currentIndex + 1}
-              </span>
-              <span className="text-xs text-slate-400">
-                Max Time: {questionLimitSec}s
-              </span>
-            </div>
-            <h1 className="text-lg sm:text-xl font-bold text-white leading-relaxed">
-              {currentQuestion.question_text}
-            </h1>
-          </div>
+      <div className="p-6 sm:p-8 rounded-3xl bg-slate-900 border border-slate-800 space-y-6 shadow-2xl">
+        <h2 className="text-lg sm:text-xl font-bold text-white leading-relaxed">
+          {currentQuestion.question_text}
+        </h2>
 
-          {/* Optional Media Attachment */}
-          {currentQuestion.attachment_url && (
-            <div className="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950/80 p-2 max-h-80 flex items-center justify-center">
-              {currentQuestion.attachment_type === 'image' ? (
-                <div className="relative group cursor-pointer" onClick={() => setImageModalOpen(true)}>
-                  <img
-                    src={currentQuestion.attachment_url}
-                    alt="Question Diagram"
-                    className="max-h-72 object-contain rounded-xl"
-                  />
-                  <div className="absolute top-2 right-2 p-1.5 rounded-lg bg-slate-900/80 text-white opacity-0 group-hover:opacity-100 transition">
-                    <Maximize2 className="w-4 h-4" />
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 flex items-center gap-3 text-slate-300">
-                  <Volume2 className="w-6 h-6 text-indigo-400" />
-                  <span className="text-xs">Audio attachment attached</span>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* MCQ Options Grid */}
-          <div className="grid grid-cols-1 gap-3 pt-2">
-            {currentQuestion.options.map((option, idx) => {
-              const isSelected = selectedForCurrent.includes(option.id);
-              const optionLetters = ['A', 'B', 'C', 'D', 'E'];
-
-              return (
-                <button
-                  key={option.id}
-                  onClick={() => handleSelectOption(option.id)}
-                  className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center justify-between group ${
-                    isSelected
-                      ? 'bg-indigo-600/20 border-indigo-500 shadow-lg shadow-indigo-500/10 text-white'
-                      : 'bg-slate-950/60 border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white'
-                  }`}
-                >
-                  <div className="flex items-center gap-3.5">
-                    <div
-                      className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold border transition ${
-                        isSelected
-                          ? 'bg-indigo-600 border-indigo-400 text-white'
-                          : 'bg-slate-900 border-slate-800 text-slate-400 group-hover:border-slate-700'
-                      }`}
-                    >
-                      {optionLetters[idx] || idx + 1}
-                    </div>
-                    <span className="text-sm font-medium">{option.text}</span>
-                  </div>
-
-                  <div
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center transition ${
-                      isSelected ? 'border-indigo-500 bg-indigo-600' : 'border-slate-700'
-                    }`}
-                  >
-                    {isSelected && <div className="w-2 h-2 rounded-full bg-white"></div>}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Bottom Action */}
-          <div className="pt-4 flex items-center justify-between border-t border-slate-800/80">
-            <span className="text-xs text-slate-500">
-              {quiz.scoring_strategy === 'time_decay'
-                ? '⚡ Fast response locks in higher points'
-                : '🎯 Standard fixed score'}
-            </span>
-
+        {/* Attachment (if any) */}
+        {currentQuestion.attachment_url && currentQuestion.attachment_type === 'image' && (
+          <div className="relative rounded-2xl overflow-hidden border border-slate-800 bg-slate-950 max-h-80 flex items-center justify-center group">
+            <img
+              src={currentQuestion.attachment_url}
+              alt="Question diagram"
+              className="w-full h-auto max-h-80 object-contain rounded-xl"
+            />
             <button
-              onClick={handleNextQuestion}
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-lg shadow-indigo-600/20 transition hover:scale-105 disabled:opacity-50"
+              type="button"
+              onClick={() => setImageModalOpen(true)}
+              className="absolute top-3 right-3 p-2 rounded-xl bg-slate-900/80 backdrop-blur text-slate-300 hover:text-white border border-slate-700"
             >
-              {isSubmitting
-                ? 'Evaluating Attempt...'
-                : currentIndex + 1 === activeQuestions.length
-                ? 'Submit Quiz'
-                : 'Next Question'}
-              <ChevronRight className="w-4 h-4" />
+              <Maximize2 className="w-4 h-4" />
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Image Modal for attachments */}
-      {imageModalOpen && currentQuestion?.attachment_url && (
-        <div
-          onClick={() => setImageModalOpen(false)}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4"
-        >
-          <img
-            src={currentQuestion.attachment_url}
-            alt="Expanded Diagram"
-            className="max-h-[85vh] max-w-[90vw] object-contain rounded-2xl shadow-2xl"
-          />
+        {/* Options List */}
+        <div className="space-y-3 pt-2">
+          {currentQuestion.options.map((option, idx) => {
+            const isSelected = selectedForCurrent.includes(option.id);
+            const letter = String.fromCharCode(65 + idx);
+
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => handleSelectOption(option.id)}
+                className={`w-full p-4 rounded-2xl border text-left transition flex items-center gap-4 ${
+                  isSelected
+                    ? 'bg-indigo-600/15 border-indigo-500 text-white shadow-lg shadow-indigo-600/10'
+                    : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:bg-slate-800/40 hover:text-white'
+                }`}
+              >
+                <span
+                  className={`w-7 h-7 rounded-xl flex items-center justify-center text-xs font-bold font-mono shrink-0 ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  {letter}
+                </span>
+                <span className="text-xs sm:text-sm font-medium flex-1">{option.text}</span>
+                {isSelected && <CheckCircle2 className="w-4 h-4 text-indigo-400 shrink-0" />}
+              </button>
+            );
+          })}
         </div>
-      )}
+
+        {/* Action Button */}
+        <div className="pt-4 flex items-center justify-end">
+          <button
+            onClick={handleNextQuestion}
+            disabled={selectedForCurrent.length === 0 || isSubmitting}
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 text-white font-bold text-xs shadow-lg shadow-indigo-600/25 transition hover:scale-105"
+          >
+            <span>
+              {currentIndex + 1 === activeQuestions.length ? 'Submit Final Answers' : 'Confirm & Next'}
+            </span>
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
 
-export default function QuizPlayArena() {
+export default function QuizPlayPage() {
   return (
-    <Suspense fallback={<div className="max-w-xl mx-auto py-20 text-center text-slate-400 text-xs">Loading arena...</div>}>
+    <Suspense fallback={<div className="max-w-xl mx-auto py-20 text-center text-slate-400 text-xs">Loading Arena...</div>}>
       <QuizPlayContent />
     </Suspense>
   );
