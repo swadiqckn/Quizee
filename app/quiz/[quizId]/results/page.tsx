@@ -50,7 +50,9 @@ function QuizResultsContent() {
   }, [entry?.id]);
 
   const copyReferral = () => {
-    const inviteUrl = `${window.location.origin}/explore?ref=${currentUser.referral_code}`;
+    const inviteUrl = currentUser
+      ? `${window.location.origin}/explore?ref=${currentUser.referral_code}`
+      : `${window.location.origin}/explore`;
     navigator.clipboard.writeText(inviteUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
@@ -207,7 +209,7 @@ function QuizResultsContent() {
 
         <div className="divide-y divide-slate-800/60">
           {roundEntries.map((e, index) => {
-            const isMe = e.user_id === currentUser.id;
+            const isMe = currentUser ? e.user_id === currentUser.id : false;
             const rank = index + 1;
 
             return (

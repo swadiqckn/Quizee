@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
   Gift,
   Sparkles,
@@ -12,6 +13,7 @@ import {
   TrendingUp,
   Award,
   AlertCircle,
+  LogIn,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { formatDate } from '@/lib/utils';
@@ -24,6 +26,36 @@ export default function ReferralsPage() {
     type: 'idle',
     message: '',
   });
+
+  if (!currentUser) {
+    return (
+      <div className="max-w-xl mx-auto px-4 py-20 text-center space-y-6">
+        <div className="w-16 h-16 rounded-3xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center mx-auto text-pink-400">
+          <Gift className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-black text-white">Sign In to Access Referral Rewards</h1>
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Get your unique referral link, invite friends and earn bonus points for tournaments.
+          </p>
+        </div>
+        <div className="flex justify-center gap-3 pt-2">
+          <Link
+            href="/login"
+            className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md shadow-indigo-600/25 transition"
+          >
+            Sign In
+          </Link>
+          <Link
+            href="/register"
+            className="px-6 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-semibold text-xs transition"
+          >
+            Create Account
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const myReferrals = referrals.filter((r) => r.referrer_id === currentUser.id);
   const referralLink = typeof window !== 'undefined'
@@ -220,7 +252,7 @@ export default function ReferralsPage() {
               <div key={ref.id} className="py-3 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-semibold text-white">
-                    {ref.referee?.full_name || 'New Contestant'}
+                    {ref.referee?.full_name || `@${ref.referee?.username}` || 'New Contestant'}
                   </p>
                   <p className="text-[10px] text-slate-500">Joined {formatDate(ref.created_at)}</p>
                 </div>

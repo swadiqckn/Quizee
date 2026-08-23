@@ -31,7 +31,7 @@ export default function QuizDetailPage() {
   const quiz = quizzes.find((q) => q.id === quizId);
   const quizRounds = rounds.filter((r) => r.quiz_id === quizId).sort((a, b) => a.round_number - b.round_number);
   const quizQuestions = questions.filter((q) => q.quiz_id === quizId);
-  const userEntries = entries.filter((e) => e.quiz_id === quizId && e.user_id === currentUser.id);
+  const userEntries = entries.filter((e) => e.quiz_id === quizId && (currentUser ? e.user_id === currentUser.id : false));
 
   if (!quiz) {
     return (

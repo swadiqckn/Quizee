@@ -25,7 +25,7 @@ export default function SuperadminPage() {
   const [orgSlug, setOrgSlug] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#6366f1');
 
-  if (currentUser.role !== 'superadmin') {
+  if (!currentUser || currentUser.role !== 'superadmin') {
     return (
       <div className="max-w-xl mx-auto py-20 text-center space-y-4">
         <ShieldCheck className="w-12 h-12 text-rose-400 mx-auto" />
