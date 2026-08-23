@@ -643,20 +643,24 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   };
 
   const addQuestion = async (qData: Partial<Question>): Promise<Question> => {
+    const cleanRoundId = qData.round_id && qData.round_id.trim() !== '' ? qData.round_id.trim() : null;
+    const cleanAttachUrl = qData.attachment_url && qData.attachment_url.trim() !== '' ? qData.attachment_url.trim() : null;
+    const cleanAttachType = cleanAttachUrl ? (qData.attachment_type || 'image') : 'none';
+
     const qPayload = {
       quiz_id: qData.quiz_id!,
-      round_id: qData.round_id || null,
-      order_index: (questions.filter((q) => q.quiz_id === qData.quiz_id).length + 1),
+      round_id: cleanRoundId,
+      order_index: qData.order_index ?? (questions.filter((q) => q.quiz_id === qData.quiz_id).length + 1),
       question_text: qData.question_text || 'New Question',
-      attachment_url: qData.attachment_url || null,
-      attachment_type: qData.attachment_type || 'none',
+      attachment_url: cleanAttachUrl,
+      attachment_type: cleanAttachType,
       points: qData.points ?? 10,
       time_limit_sec: qData.time_limit_sec ?? 15,
       options: qData.options || [
         { id: 'opt-1', text: 'Option A', is_correct: true },
         { id: 'opt-2', text: 'Option B', is_correct: false },
       ],
-      explanation: qData.explanation || null,
+      explanation: qData.explanation ? qData.explanation.trim() : null,
     };
 
     let newQ: Question;
@@ -671,6 +675,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       if (!error && dbQ) {
         newQ = dbQ;
       } else {
+        if (error) console.error('Supabase Question Insert Error:', error);
         newQ = {
           id: generateUUID(),
           ...qPayload,
@@ -678,6 +683,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         };
       }
     } catch (e) {
+      console.error('Supabase Question Insert Exception:', e);
       newQ = {
         id: generateUUID(),
         ...qPayload,
