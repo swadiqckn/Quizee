@@ -17,6 +17,17 @@ import {
 import { calculateQuestionPoints, evaluateQualification } from './scoring';
 import { createClient } from './supabase/client';
 
+const generateUUID = () => {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+};
+
 interface QuizPlatformContextType {
   currentUser: Profile | null;
   setCurrentUser: (user: Profile | null) => void;
@@ -137,7 +148,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
           role: 'admin',
           auth_provider: 'google',
           google_id: authUser.id,
-          org_id: null,
+          org_id: activeOrg?.id || null,
           referral_code: newRefCode,
           referred_by: null,
           total_points: 0,
@@ -161,11 +172,29 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     try {
       setIsLoading(true);
 
-      // 1. Fetch Organisations
+      // 1. Fetch Organisations (Ensure at least 1 default exists)
+      let currentOrgs: Organisation[] = [];
       const { data: orgsData } = await supabase.from('organisations').select('*');
       if (orgsData && orgsData.length > 0) {
-        setOrganisations(orgsData);
-        if (!activeOrg) setActiveOrg(orgsData[0]);
+        currentOrgs = orgsData;
+      } else {
+        // Create default organization
+        const { data: createdOrg } = await supabase
+          .from('organisations')
+          .insert({
+            name: 'Primary Workspace',
+            slug: 'main',
+            plan: 'free',
+            quizzes_created_this_month: 0,
+          })
+          .select()
+          .single();
+        if (createdOrg) currentOrgs = [createdOrg];
+      }
+
+      setOrganisations(currentOrgs);
+      if (currentOrgs.length > 0 && !activeOrg) {
+        setActiveOrg(currentOrgs[0]);
       }
 
       // 2. Fetch Users
@@ -352,7 +381,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     }
 
     const newUser: Profile = {
-      id: `usr-${Date.now()}`,
+      id: generateUUID(),
       username: cleanUsername,
       email: `${cleanUsername}@quizee.local`,
       full_name: fullName || cleanUsername,
@@ -376,7 +405,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
 
     if (referrer) {
       const newReferral: Referral = {
-        id: `ref-${Date.now()}`,
+        id: generateUUID(),
         referrer_id: referrer.id,
         referee_id: newUser.id,
         quiz_id: null,
@@ -464,9 +493,11 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     const currentPlan: PlanType = activeOrg?.plan || 'free';
     const participantCap = currentPlan === 'free' ? 100 : null;
 
-    const newQuiz: Quiz = {
-      id: `qz-${Date.now()}`,
-      org_id: activeOrg?.id || 'org-main',
+    // Ensure we have a valid org_id
+    const targetOrgId: string = activeOrg?.id || (organisations.length > 0 ? organisations[0].id : generateUUID());
+
+    const quizInsert = {
+      org_id: targetOrgId,
       title: quizData.title || 'Untitled Quiz',
       description: quizData.description || '',
       banner_url: quizData.banner_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&auto=format&fit=crop&q=80',
@@ -484,32 +515,41 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       max_participants: participantCap,
       start_time: quizData.start_time || new Date().toISOString(),
       end_time: quizData.end_time || new Date(Date.now() + 48 * 3600000).toISOString(),
-      created_by: currentUser?.id || 'admin-host',
-      created_at: new Date().toISOString(),
-      organisation: activeOrg || undefined,
-      questions_count: 0,
+      created_by: currentUser?.id || null,
     };
 
+    let newQuiz: Quiz;
+
     try {
-      await supabase.from('quizzes').insert({
-        id: newQuiz.id,
-        org_id: newQuiz.org_id,
-        title: newQuiz.title,
-        description: newQuiz.description,
-        banner_url: newQuiz.banner_url,
-        quiz_type: newQuiz.quiz_type,
-        progression_mode: newQuiz.progression_mode,
-        scoring_strategy: newQuiz.scoring_strategy,
-        base_points_per_question: newQuiz.base_points_per_question,
-        time_limit_per_question_sec: newQuiz.time_limit_per_question_sec,
-        shuffle_questions: newQuiz.shuffle_questions,
-        shuffle_options: newQuiz.shuffle_options,
-        enable_referral_bonus: newQuiz.enable_referral_bonus,
-        referral_bonus_points: newQuiz.referral_bonus_points,
-        status: newQuiz.status,
-        max_participants: newQuiz.max_participants,
-      });
-    } catch (e) {}
+      const { data: dbQuiz, error } = await supabase
+        .from('quizzes')
+        .insert(quizInsert)
+        .select('*, organisation:organisations(*)')
+        .single();
+
+      if (!error && dbQuiz) {
+        newQuiz = {
+          ...dbQuiz,
+          questions_count: 0,
+        };
+      } else {
+        newQuiz = {
+          id: generateUUID(),
+          ...quizInsert,
+          created_at: new Date().toISOString(),
+          organisation: activeOrg || undefined,
+          questions_count: 0,
+        };
+      }
+    } catch (e) {
+      newQuiz = {
+        id: generateUUID(),
+        ...quizInsert,
+        created_at: new Date().toISOString(),
+        organisation: activeOrg || undefined,
+        questions_count: 0,
+      };
+    }
 
     setQuizzes((prev) => [newQuiz, ...prev]);
 
@@ -543,8 +583,8 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
 
   const addRound = async (quizId: string, roundData: Partial<TournamentRound>): Promise<TournamentRound> => {
     const existingForQuiz = rounds.filter((r) => r.quiz_id === quizId);
-    const newRound: TournamentRound = {
-      id: `rnd-${Date.now()}`,
+    
+    const roundPayload = {
       quiz_id: quizId,
       round_number: existingForQuiz.length + 1,
       title: roundData.title || `Round ${existingForQuiz.length + 1}`,
@@ -554,12 +594,33 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       min_correct_to_qualify: roundData.min_correct_to_qualify ?? 1,
       max_qualifiers: roundData.max_qualifiers ?? 20,
       status: roundData.status || 'pending',
-      created_at: new Date().toISOString(),
     };
 
+    let newRound: TournamentRound;
+
     try {
-      await supabase.from('tournament_rounds').insert(newRound);
-    } catch (e) {}
+      const { data: dbRound, error } = await supabase
+        .from('tournament_rounds')
+        .insert(roundPayload)
+        .select()
+        .single();
+
+      if (!error && dbRound) {
+        newRound = dbRound;
+      } else {
+        newRound = {
+          id: generateUUID(),
+          ...roundPayload,
+          created_at: new Date().toISOString(),
+        };
+      }
+    } catch (e) {
+      newRound = {
+        id: generateUUID(),
+        ...roundPayload,
+        created_at: new Date().toISOString(),
+      };
+    }
 
     setRounds((prev) => [...prev, newRound]);
     return newRound;
@@ -582,8 +643,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   };
 
   const addQuestion = async (qData: Partial<Question>): Promise<Question> => {
-    const newQ: Question = {
-      id: `qst-${Date.now()}`,
+    const qPayload = {
       quiz_id: qData.quiz_id!,
       round_id: qData.round_id || null,
       order_index: (questions.filter((q) => q.quiz_id === qData.quiz_id).length + 1),
@@ -597,12 +657,33 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         { id: 'opt-2', text: 'Option B', is_correct: false },
       ],
       explanation: qData.explanation || null,
-      created_at: new Date().toISOString(),
     };
 
+    let newQ: Question;
+
     try {
-      await supabase.from('questions').insert(newQ);
-    } catch (e) {}
+      const { data: dbQ, error } = await supabase
+        .from('questions')
+        .insert(qPayload)
+        .select()
+        .single();
+
+      if (!error && dbQ) {
+        newQ = dbQ;
+      } else {
+        newQ = {
+          id: generateUUID(),
+          ...qPayload,
+          created_at: new Date().toISOString(),
+        };
+      }
+    } catch (e) {
+      newQ = {
+        id: generateUUID(),
+        ...qPayload,
+        created_at: new Date().toISOString(),
+      };
+    }
 
     setQuestions((prev) => [...prev, newQ]);
     
@@ -688,36 +769,48 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       minCorrectToQualify: targetRound?.min_correct_to_qualify,
     });
 
-    const newEntry: Entry = {
-      id: `ent-${Date.now()}`,
+    const entryPayload = {
       quiz_id: quizId,
       round_id: roundId,
-      user_id: currentUser?.id || 'guest-contestant',
+      user_id: currentUser?.id || generateUUID(),
       score: calculatedScore,
       total_correct: totalCorrectCount,
       total_time_taken_ms: totalTimeTaken,
       qualified_for_next_round: isQualified,
-      status: 'submitted',
+      status: 'submitted' as const,
       started_at: new Date(Date.now() - totalTimeTaken).toISOString(),
       completed_at: new Date().toISOString(),
-      user: currentUser || undefined,
-      quiz: targetQuiz,
-      round: targetRound,
     };
 
+    let newEntry: Entry;
+
     try {
-      await supabase.from('entries').insert({
-        id: newEntry.id,
-        quiz_id: newEntry.quiz_id,
-        round_id: newEntry.round_id,
-        user_id: newEntry.user_id,
-        score: newEntry.score,
-        total_correct: newEntry.total_correct,
-        total_time_taken_ms: newEntry.total_time_taken_ms,
-        qualified_for_next_round: newEntry.qualified_for_next_round,
-        status: newEntry.status,
-      });
-    } catch (e) {}
+      const { data: dbEntry, error } = await supabase
+        .from('entries')
+        .insert(entryPayload)
+        .select('*, user:users(*), quiz:quizzes(*), round:tournament_rounds(*)')
+        .single();
+
+      if (!error && dbEntry) {
+        newEntry = dbEntry;
+      } else {
+        newEntry = {
+          id: generateUUID(),
+          ...entryPayload,
+          user: currentUser || undefined,
+          quiz: targetQuiz,
+          round: targetRound,
+        };
+      }
+    } catch (e) {
+      newEntry = {
+        id: generateUUID(),
+        ...entryPayload,
+        user: currentUser || undefined,
+        quiz: targetQuiz,
+        round: targetRound,
+      };
+    }
 
     setEntries((prev) => [newEntry, ...prev]);
 
@@ -751,7 +844,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     if (!referrer || referrer.id === currentUser.id) return false;
 
     const newReferral: Referral = {
-      id: `ref-${Date.now()}`,
+      id: generateUUID(),
       referrer_id: referrer.id,
       referee_id: currentUser.id,
       quiz_id: null,

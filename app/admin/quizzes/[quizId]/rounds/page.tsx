@@ -18,14 +18,38 @@ import {
 import { useQuizPlatform } from '@/lib/context';
 import { formatDate } from '@/lib/utils';
 import { TournamentRound, RoundStatus } from '@/lib/types';
+import { createClient } from '@/lib/supabase/client';
 
 export default function ManageTournamentRoundsPage() {
   const params = useParams();
   const quizId = params.quizId as string;
-  const { quizzes, rounds, addRound, updateRound, deleteRound } = useQuizPlatform();
+  const { quizzes, rounds, addRound, updateRound, deleteRound, isLoading } = useQuizPlatform();
+  const [directQuiz, setDirectQuiz] = useState<any>(null);
+  const [isFetchingDirect, setIsFetchingDirect] = useState(false);
 
-  const quiz = quizzes.find((q) => q.id === quizId);
+  const quiz = quizzes.find((q) => q.id === quizId) || directQuiz;
   const quizRounds = rounds.filter((r) => r.quiz_id === quizId).sort((a, b) => a.round_number - b.round_number);
+
+  React.useEffect(() => {
+    if (!quiz && quizId) {
+      setIsFetchingDirect(true);
+      const supabase = createClient();
+      const fetchDirect = async () => {
+        try {
+          const { data } = await supabase
+            .from('quizzes')
+            .select('*, organisation:organisations(*)')
+            .eq('id', quizId)
+            .single();
+          if (data) setDirectQuiz(data);
+        } catch (err) {
+        } finally {
+          setIsFetchingDirect(false);
+        }
+      };
+      fetchDirect();
+    }
+  }, [quiz, quizId]);
 
   const [isAdding, setIsAdding] = useState(false);
   const [editingRoundId, setEditingRoundId] = useState<string | null>(null);
@@ -41,10 +65,28 @@ export default function ManageTournamentRoundsPage() {
   const [maxQualifiers, setMaxQualifiers] = useState<number>(50);
   const [status, setStatus] = useState<RoundStatus>('pending');
 
+  if (isLoading || isFetchingDirect) {
+    return (
+      <div className="max-w-4xl mx-auto py-24 text-center space-y-4">
+        <div className="w-10 h-10 border-4 border-[#e05a38] border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="text-xs text-slate-500 font-bold">Loading Tournament Levels...</p>
+      </div>
+    );
+  }
+
   if (!quiz) {
     return (
-      <div className="max-w-4xl mx-auto py-20 text-center text-slate-900 font-bold">
-        <p>Quiz not found.</p>
+      <div className="max-w-xl mx-auto py-20 text-center space-y-4 p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-sm my-8">
+        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+        <h2 className="text-lg font-bold text-slate-900">Tournament Not Found</h2>
+        <p className="text-xs text-slate-500 font-medium">The competition may have been removed or link is invalid.</p>
+        <Link
+          href="/admin/dashboard"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold transition shadow-sm mt-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Organizer Dashboard
+        </Link>
       </div>
     );
   }

@@ -18,9 +18,11 @@ import {
   Award,
   Users,
   Repeat,
+  AlertCircle,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { formatTimeMs, formatDate } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
 
 function QuizResultsContent() {
   const params = useParams();
@@ -28,15 +30,38 @@ function QuizResultsContent() {
   const quizId = params.quizId as string;
   const entryId = searchParams.get('entryId');
 
-  const { quizzes, rounds, entries, winners, currentUser } = useQuizPlatform();
+  const { quizzes, rounds, entries, winners, currentUser, isLoading } = useQuizPlatform();
   const [copiedLink, setCopiedLink] = useState(false);
+  const [directQuiz, setDirectQuiz] = useState<any>(null);
+  const [isFetchingDirect, setIsFetchingDirect] = useState(false);
 
-  const quiz = quizzes.find((q) => q.id === quizId);
+  const quiz = quizzes.find((q) => q.id === quizId) || directQuiz;
   const entry = entries.find((e) => e.id === entryId) || entries[0];
   const round = entry?.round_id ? rounds.find((r) => r.id === entry.round_id) : null;
   const nextRound = round
     ? rounds.find((r) => r.quiz_id === quizId && r.round_number === round.round_number + 1)
     : null;
+
+  React.useEffect(() => {
+    if (!quiz && quizId) {
+      setIsFetchingDirect(true);
+      const supabase = createClient();
+      const fetchDirect = async () => {
+        try {
+          const { data } = await supabase
+            .from('quizzes')
+            .select('*, organisation:organisations(*)')
+            .eq('id', quizId)
+            .single();
+          if (data) setDirectQuiz(data);
+        } catch (err) {
+        } finally {
+          setIsFetchingDirect(false);
+        }
+      };
+      fetchDirect();
+    }
+  }, [quiz, quizId]);
 
   // Trigger celebratory confetti on high score or qualification
   useEffect(() => {
@@ -58,11 +83,22 @@ function QuizResultsContent() {
     setTimeout(() => setCopiedLink(false), 2500);
   };
 
+  if (isLoading || isFetchingDirect) {
+    return (
+      <div className="max-w-4xl mx-auto py-24 text-center space-y-4">
+        <div className="w-10 h-10 border-4 border-[#e05a38] border-t-transparent rounded-full animate-spin mx-auto"></div>
+        <p className="text-xs text-slate-500 font-bold">Calculating Live Results & Rankings...</p>
+      </div>
+    );
+  }
+
   if (!quiz || !entry) {
     return (
-      <div className="max-w-xl mx-auto py-20 text-center text-slate-900 font-bold">
-        <p>Results not found.</p>
-        <Link href="/explore" className="text-[#e05a38] text-xs mt-2 block hover:underline">
+      <div className="max-w-xl mx-auto py-20 text-center space-y-4 p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-sm my-8">
+        <AlertCircle className="w-12 h-12 text-rose-500 mx-auto" />
+        <h2 className="text-xl font-bold text-slate-900">Results Not Found</h2>
+        <p className="text-xs text-slate-500 font-medium">Results for this attempt are unavailable or have expired.</p>
+        <Link href="/explore" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#e05a38] text-white text-xs font-bold hover:bg-[#c84a29] transition shadow-sm mt-2">
           Back to Explore
         </Link>
       </div>
