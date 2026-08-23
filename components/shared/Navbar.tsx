@@ -67,34 +67,54 @@ export function Navbar() {
     navLinks = [];
   }
 
+  const isQuizPage =
+    pathname.startsWith('/quiz/') ||
+    (pathname !== '/' &&
+      pathname !== '/login' &&
+      pathname !== '/register' &&
+      pathname !== '/explore' &&
+      !pathname.startsWith('/admin') &&
+      pathname !== '/superadmin' &&
+      pathname !== '/demo' &&
+      pathname !== '/referrals');
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-[#ebdcd1] bg-[#fffaf5]/90 backdrop-blur-md transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 py-3 flex items-center justify-between gap-4">
-        {/* Brand Logo & Tenant Pill */}
-        <div className="flex items-center gap-6">
-          <Link href={isAdmin ? '/admin/dashboard' : '/'} className="flex items-center gap-1 group">
-            {/* Tile Blocks Logo */}
-            <div className="flex items-center gap-1">
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
-                Q
-              </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-75">
-                u
-              </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-100">
-                i
-              </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-150">
-                z
-              </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-200">
-                e
-              </span>
-              <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-300">
-                e
+    <header className={`sticky top-0 z-50 w-full border-b border-[#ebdcd1] bg-[#fffaf5]/90 backdrop-blur-md transition-all ${isQuizPage ? 'hidden sm:block' : ''}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 py-2.5 flex items-center justify-between gap-4">
+        {/* Brand Logo or White-label Portal Indicator */}
+        <div className="flex items-center gap-4">
+          {isQuizPage ? (
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#e05a38] animate-pulse"></span>
+              <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Competition Arena
               </span>
             </div>
-          </Link>
+          ) : (
+            <Link href={isAdmin ? '/admin/dashboard' : '/'} className="flex items-center gap-1 group">
+              {/* Tile Blocks Logo */}
+              <div className="flex items-center gap-1">
+                <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform">
+                  Q
+                </span>
+                <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-75">
+                  u
+                </span>
+                <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-100">
+                  i
+                </span>
+                <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-150">
+                  z
+                </span>
+                <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-200">
+                  e
+                </span>
+                <span className="w-8 h-8 rounded-xl bg-[#e05a38] text-white flex items-center justify-center font-bold text-lg shadow-sm group-hover:scale-105 transition-transform delay-300">
+                  e
+                </span>
+              </div>
+            </Link>
+          )}
 
           {/* Org Selector for Admins */}
           {isAdmin && (
