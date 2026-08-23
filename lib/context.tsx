@@ -41,7 +41,7 @@ interface QuizPlatformContextType {
       | 'superadmin'
       | 'participant'
       | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string }
-  ) => Promise<{ success: boolean; user: Profile }>;
+  ) => Promise<{ success: boolean; error?: string }>;
   register: (params: {
     username: string;
     password?: string;
@@ -50,7 +50,7 @@ interface QuizPlatformContextType {
     role?: 'superadmin' | 'admin' | 'participant';
     orgId?: string;
   }) => Promise<{ success: boolean; message?: string; user?: Profile }>;
-  logout: () => void;
+  logout: () => Promise<void>;
 
   // Subscription / Plan Actions
   upgradeActiveOrgPlan: (newPlan: PlanType) => Promise<void>;
@@ -103,6 +103,58 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   const [winners, setWinners] = useState<Winner[]>([]);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const loadUserProfile = async (authUser: any) => {
+    try {
+      const { data: profile } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', authUser.email)
+        .single();
+
+      if (profile) {
+        setCurrentUser(profile);
+        try {
+          localStorage.setItem('quizee_current_user', JSON.stringify(profile));
+        } catch (e) {}
+      } else {
+        const username = authUser.email
+          ? authUser.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_')
+          : `user_${Date.now()}`;
+        const newRefCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const newProfile: Profile = {
+          id: authUser.id,
+          username,
+          email: authUser.email,
+          full_name:
+            authUser.user_metadata?.full_name ||
+            authUser.user_metadata?.name ||
+            username,
+          avatar_url:
+            authUser.user_metadata?.avatar_url ||
+            authUser.user_metadata?.picture ||
+            null,
+          role: 'admin',
+          auth_provider: 'google',
+          google_id: authUser.id,
+          org_id: null,
+          referral_code: newRefCode,
+          referred_by: null,
+          total_points: 0,
+          total_referrals: 0,
+          created_at: new Date().toISOString(),
+        };
+
+        await supabase.from('users').upsert(newProfile);
+        setCurrentUser(newProfile);
+        try {
+          localStorage.setItem('quizee_current_user', JSON.stringify(newProfile));
+        } catch (e) {}
+      }
+    } catch (err) {
+      console.error('Error fetching Supabase user profile:', err);
+    }
+  };
 
   // Fetch real database records from Supabase
   const refreshData = async () => {
@@ -166,14 +218,14 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         setReferrals(referralsData);
       }
     } catch (e) {
-      console.error('Supabase live fetch error (will use local state fallback):', e);
+      console.error('Supabase live fetch error:', e);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Restore user session from localStorage
+    // 1. Restore local cache if present
     try {
       const savedUser = localStorage.getItem('quizee_current_user');
       if (savedUser) {
@@ -181,13 +233,38 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       }
     } catch (e) {}
 
+    // 2. Get real Supabase active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        loadUserProfile(session.user);
+      }
+    });
+
+    // 3. Subscribe to real auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        loadUserProfile(session.user);
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        try {
+          localStorage.removeItem('quizee_current_user');
+        } catch (e) {}
+      }
+    });
+
     refreshData();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (username: string, _password?: string) => {
     const cleanUsername = username.trim().toLowerCase();
     
-    // Check in local cache or query Supabase
+    // Query Supabase for username
     let user = allUsers.find((u) => u.username?.toLowerCase() === cleanUsername);
 
     if (!user) {
@@ -222,52 +299,27 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   ) => {
     const role = typeof options === 'string' ? options : options.role || 'participant';
     const referralCode = typeof options === 'object' ? options.referralCode : undefined;
-    const orgId = typeof options === 'object' ? options.orgId : undefined;
 
-    const email = role === 'admin' ? 'admin.host@gmail.com' : 'contestant.google@gmail.com';
-    const cleanUsername = role === 'admin' ? 'admin_host' : `player_${Math.floor(Math.random() * 899 + 100)}`;
-    const fullName = role === 'admin' ? 'Organizer Admin (Google)' : 'Contestant (Google)';
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const redirectTo = `${origin}/auth/callback?role=${role}${referralCode ? `&ref=${encodeURIComponent(referralCode)}` : ''}`;
 
-    let existingUser = allUsers.find((u) => u.email === email || (u.auth_provider === 'google' && u.role === role));
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
 
-    if (!existingUser) {
-      const newRefCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-      let referrer: Profile | undefined;
-      if (referralCode) {
-        referrer = allUsers.find((u) => u.referral_code.toUpperCase() === referralCode.trim().toUpperCase());
-      }
-
-      const newUser: Profile = {
-        id: `usr-${Date.now()}`,
-        username: cleanUsername,
-        email: email,
-        full_name: fullName,
-        avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&auto=format&fit=crop&q=80`,
-        role: role,
-        auth_provider: 'google',
-        google_id: `g_${Date.now()}`,
-        org_id: orgId || activeOrg?.id || null,
-        referral_code: newRefCode,
-        referred_by: referrer ? referrer.id : null,
-        total_points: referrer ? 10 : 0,
-        total_referrals: 0,
-        created_at: new Date().toISOString(),
-      };
-
-      try {
-        await supabase.from('users').upsert(newUser);
-      } catch (e) {}
-
-      existingUser = newUser;
-      setAllUsers((prev) => [...prev, newUser]);
+    if (error) {
+      console.error('Supabase Google OAuth Error:', error);
+      return { success: false, error: error.message };
     }
 
-    setCurrentUser(existingUser);
-    try {
-      localStorage.setItem('quizee_current_user', JSON.stringify(existingUser));
-    } catch (e) {}
-
-    return { success: true, user: existingUser };
+    return { success: true };
   };
 
   const register = async ({
@@ -353,7 +405,10 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     return { success: true, user: newUser };
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {}
     setCurrentUser(null);
     try {
       localStorage.removeItem('quizee_current_user');

@@ -12,10 +12,13 @@ function RegisterForm() {
   const referralCode = searchParams.get('ref') || undefined;
   const { loginWithGoogle } = useQuizPlatform();
 
+  const [error, setError] = React.useState<string | null>(null);
+
   const handleAdminGoogleRegister = async () => {
+    setError(null);
     const res = await loginWithGoogle({ role: 'admin', referralCode });
-    if (res.success) {
-      router.push('/admin/dashboard');
+    if (!res.success && res.error) {
+      setError(res.error);
     }
   };
 
@@ -73,6 +76,12 @@ function RegisterForm() {
               </li>
             </ul>
           </div>
+
+          {error && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+              {error}
+            </div>
+          )}
 
           {/* Exclusive Google Registration Button */}
           <div className="space-y-3 pt-2">

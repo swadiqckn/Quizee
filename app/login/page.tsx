@@ -33,13 +33,10 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async (role: 'admin' | 'participant' = 'participant') => {
+    setError('');
     const res = await loginWithGoogle(role);
-    if (res.success) {
-      if (role === 'admin') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/explore');
-      }
+    if (!res.success && res.error) {
+      setError(res.error);
     }
   };
 
