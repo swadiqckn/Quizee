@@ -137,9 +137,10 @@ function SlugQuizResultsContent() {
   }, [entry?.id]);
 
   const copyReferral = () => {
+    const slugPath = quiz?.slug || (quiz?.title ? quiz.title.toLowerCase().replace(/[^a-z0-9]/g, '') : null) || slug;
     const inviteUrl = currentUser?.referral_code
-      ? `${window.location.origin}/${slug}?ref=${currentUser.referral_code}`
-      : `${window.location.origin}/${slug}`;
+      ? `${window.location.origin}/${slugPath}?ref=${currentUser.referral_code}`
+      : `${window.location.origin}/${slugPath}`;
     navigator.clipboard.writeText(inviteUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);

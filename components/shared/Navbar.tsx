@@ -23,7 +23,7 @@ import { useQuizPlatform } from '@/lib/context';
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, switchUserRole, activeOrg, organisations, setActiveOrg, logout } = useQuizPlatform();
+  const { currentUser, quizzes, switchUserRole, activeOrg, organisations, setActiveOrg, logout } = useQuizPlatform();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [orgDropdownOpen, setOrgDropdownOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -32,7 +32,15 @@ export function Navbar() {
 
   const copyReferral = () => {
     if (!currentUser) return;
-    navigator.clipboard.writeText(currentUser.referral_code);
+    const currentQuiz = quizzes[0];
+    const quizPath = pathname.length > 1 && !pathname.startsWith('/admin') && !pathname.startsWith('/login') && !pathname.startsWith('/register') && !pathname.startsWith('/referrals')
+      ? pathname
+      : currentQuiz
+      ? `/${currentQuiz.slug || (currentQuiz.title ? currentQuiz.title.toLowerCase().replace(/[^a-z0-9]/g, '') : null) || currentQuiz.id}`
+      : `/explore`;
+
+    const fullUrl = typeof window !== 'undefined' ? `${window.location.origin}${quizPath}?ref=${currentUser.referral_code}` : `?ref=${currentUser.referral_code}`;
+    navigator.clipboard.writeText(fullUrl);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };

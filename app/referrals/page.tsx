@@ -19,7 +19,7 @@ import { useQuizPlatform } from '@/lib/context';
 import { formatDate } from '@/lib/utils';
 
 export default function ReferralsPage() {
-  const { currentUser, referrals, applyReferralCode } = useQuizPlatform();
+  const { currentUser, referrals, quizzes, applyReferralCode } = useQuizPlatform();
   const [copied, setCopied] = useState(false);
   const [inputCode, setInputCode] = useState('');
   const [claimStatus, setClaimStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({
@@ -57,10 +57,13 @@ export default function ReferralsPage() {
     );
   }
 
+  const primaryQuiz = quizzes[0];
+  const primaryQuizSlug = primaryQuiz?.slug || (primaryQuiz?.title ? primaryQuiz.title.toLowerCase().replace(/[^a-z0-9]/g, '') : null) || (primaryQuiz ? primaryQuiz.id : '');
+
   const myReferrals = referrals.filter((r) => r.referrer_id === currentUser.id);
   const referralLink = typeof window !== 'undefined'
-    ? `${window.location.origin}/explore?ref=${currentUser.referral_code}`
-    : `https://quizee.com/explore?ref=${currentUser.referral_code}`;
+    ? (primaryQuizSlug ? `${window.location.origin}/${primaryQuizSlug}?ref=${currentUser.referral_code}` : `${window.location.origin}/explore?ref=${currentUser.referral_code}`)
+    : `https://quizee.com/${primaryQuizSlug}?ref=${currentUser.referral_code}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralLink);
