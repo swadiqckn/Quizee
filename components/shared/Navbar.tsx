@@ -58,7 +58,7 @@ export function Navbar() {
               <Trophy className="w-5 h-5 text-white" />
             </div>
             <span className="bg-gradient-to-r from-white via-slate-200 to-indigo-200 bg-clip-text text-transparent">
-              QuizArena
+              Quizee
             </span>
           </Link>
 

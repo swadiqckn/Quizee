@@ -28,7 +28,7 @@ export default function ReferralsPage() {
   const myReferrals = referrals.filter((r) => r.referrer_id === currentUser.id);
   const referralLink = typeof window !== 'undefined'
     ? `${window.location.origin}/explore?ref=${currentUser.referral_code}`
-    : `https://quizarena.com/explore?ref=${currentUser.referral_code}`;
+    : `https://quizee.com/explore?ref=${currentUser.referral_code}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralLink);

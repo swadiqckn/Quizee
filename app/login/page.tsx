@@ -42,7 +42,7 @@ export default function LoginPage() {
           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 flex items-center justify-center mx-auto text-white shadow-xl shadow-indigo-600/25">
             <Trophy className="w-6 h-6" />
           </div>
-          <h1 className="text-2xl font-extrabold text-white">Sign In to QuizArena</h1>
+          <h1 className="text-2xl font-extrabold text-white">Sign In to Quizee</h1>
           <p className="text-xs text-slate-400">
             Participants use simple username/password. Admins authenticate with Google.
           </p>

@@ -1,4 +1,4 @@
-# 🏆 QuizArena - Multi-Tenant MCQ Quiz & Tournament Platform
+# 🏆 Quizee - Multi-Tenant MCQ Quiz & Tournament Platform
 
 A multi-tenant MCQ Quiz and Tournament Platform built with **Next.js 14 (App Router, TypeScript, Tailwind CSS)** and **Supabase (PostgreSQL, Row Level Security, Auth, and Storage)**.
 

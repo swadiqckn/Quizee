@@ -4,8 +4,8 @@ import { QuizPlatformProvider } from '@/lib/context';
 import { Navbar } from '@/components/shared/Navbar';
 
 export const metadata: Metadata = {
-  title: 'QuizArena - Multi-Tenant MCQ & Tournament Platform',
-  description: 'Enterprise multi-tenant quiz platform with time-decay scoring, multi-round tournament progression, and referral incentives.',
+  title: 'Quizee - Multi-Tenant MCQ & Tournament Platform',
+  description: 'Enterprise multi-tenant quiz platform with dynamic time-decay scoring, multi-round tournament progression, and referral incentives.',
 };
 
 export default function RootLayout({

@@ -168,7 +168,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     const newUser: Profile = {
       id: `user-${Date.now()}`,
       username: cleanUsername,
-      email: `${cleanUsername}@quizarena.local`,
+      email: `${cleanUsername}@quizee.local`,
       full_name: fullName || cleanUsername,
       avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&auto=format&fit=crop&q=80`,
       role: role,

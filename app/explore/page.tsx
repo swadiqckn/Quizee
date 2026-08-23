@@ -169,7 +169,7 @@ export default function ExplorePage() {
 
               <div className="px-6 py-3.5 bg-slate-950/50 border-t border-slate-800 flex items-center justify-between">
                 <span className="text-[11px] text-slate-400">
-                  {quiz.organisation?.name || 'QuizArena'}
+                  {quiz.organisation?.name || 'Quizee'}
                 </span>
                 <Link
                   href={`/quiz/${quiz.id}`}
