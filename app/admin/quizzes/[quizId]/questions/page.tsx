@@ -24,6 +24,7 @@ import {
   Check,
   X,
   FileText,
+  Settings,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { Question, QuestionOption, AttachmentType } from '@/lib/types';
@@ -420,8 +421,17 @@ export default function ManageQuestionsPage() {
 
         <div className="flex flex-wrap items-center gap-3">
           <Link
-            href={`/quiz/${quiz.id}`}
+            href={`/admin/quizzes/${quiz.id}/edit`}
+            className="px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5"
+          >
+            <Settings className="w-3.5 h-3.5 text-slate-500" />
+            Edit Quiz Settings
+          </Link>
+
+          <Link
+            href={`/${quiz.slug || quiz.id}`}
             className="px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-[#ebdcd1] text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5"
+            target="_blank"
           >
             <Eye className="w-3.5 h-3.5" />
             Preview Quiz

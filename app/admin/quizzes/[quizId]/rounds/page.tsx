@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  Settings,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { formatDate } from '@/lib/utils';
@@ -164,18 +165,28 @@ export default function ManageTournamentRoundsPage() {
           </h1>
         </div>
 
-        {!isAdding && (
-          <button
-            onClick={() => {
-              reset();
-              setIsAdding(true);
-            }}
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition"
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href={`/admin/quizzes/${quiz.id}/edit`}
+            className="px-4 py-3 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5"
           >
-            <Plus className="w-4 h-4" />
-            Add Tournament Level
-          </button>
-        )}
+            <Settings className="w-3.5 h-3.5 text-slate-500" />
+            Edit Quiz Settings
+          </Link>
+
+          {!isAdding && (
+            <button
+              onClick={() => {
+                reset();
+                setIsAdding(true);
+              }}
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition"
+            >
+              <Plus className="w-4 h-4" />
+              Add Tournament Level
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Form */}

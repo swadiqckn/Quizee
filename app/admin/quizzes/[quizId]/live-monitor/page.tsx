@@ -17,6 +17,7 @@ import {
   Sparkles,
   Download,
   AlertCircle,
+  Settings,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { formatTimeMs, formatDate } from '@/lib/utils';
@@ -111,6 +112,14 @@ export default function LiveMonitorPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link
+            href={`/admin/quizzes/${quiz.id}/edit`}
+            className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5"
+          >
+            <Settings className="w-3.5 h-3.5 text-slate-500" />
+            Edit Quiz Settings
+          </Link>
+
           <button
             onClick={() => alert('Exporting entries to CSV...')}
             className="px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-[#ebdcd1] text-xs font-bold text-slate-700 shadow-sm transition flex items-center gap-1.5"

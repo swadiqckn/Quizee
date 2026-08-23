@@ -195,6 +195,15 @@ export default function AdminDashboardPage() {
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-2">
                 <Link
+                  href={`/admin/quizzes/${quiz.id}/edit`}
+                  className="px-3.5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-xs font-bold text-slate-700 transition flex items-center gap-1.5 shadow-sm"
+                  title="Edit Quiz Settings"
+                >
+                  <Settings className="w-3.5 h-3.5 text-slate-500" />
+                  Edit
+                </Link>
+
+                <Link
                   href={`/admin/quizzes/${quiz.id}/questions`}
                   className="px-3.5 py-2.5 rounded-2xl bg-slate-50 hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 transition flex items-center gap-1.5"
                 >
@@ -221,7 +230,7 @@ export default function AdminDashboardPage() {
                 </Link>
 
                 <Link
-                  href={`/quiz/${quiz.id}`}
+                  href={`/${quiz.slug || quiz.id}`}
                   className="p-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white transition shadow-sm"
                   title="View Public Quiz Page"
                 >
