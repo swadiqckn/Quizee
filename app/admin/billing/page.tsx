@@ -24,8 +24,8 @@ export default function AdminBillingPage() {
   const currentQuizzesCount = activeOrg?.quizzes_created_this_month || 0;
   const [upgradedSuccess, setUpgradedSuccess] = useState(false);
 
-  const handleSelectPlan = (plan: PlanType) => {
-    upgradeActiveOrgPlan(plan);
+  const handleSelectPlan = async (plan: PlanType) => {
+    await upgradeActiveOrgPlan(plan);
     setUpgradedSuccess(true);
     setTimeout(() => setUpgradedSuccess(false), 3000);
   };

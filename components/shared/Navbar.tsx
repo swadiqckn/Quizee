@@ -36,6 +36,7 @@ export function Navbar() {
 
   const navLinks = [
     { href: '/explore', label: 'Explore Quizzes', icon: Compass },
+    { href: '/demo', label: 'Interactive Demo', icon: Sparkles },
     { href: '/admin/billing', label: 'Plans & Pricing', icon: Crown },
   ];
 

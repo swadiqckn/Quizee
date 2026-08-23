@@ -49,12 +49,12 @@ export default function ManageTournamentRoundsPage() {
     );
   }
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
     if (editingRoundId) {
-      updateRound(editingRoundId, {
+      await updateRound(editingRoundId, {
         title: title.trim(),
         scheduled_start_time: new Date(scheduledStart).toISOString(),
         scheduled_end_time: new Date(scheduledEnd).toISOString(),
@@ -65,7 +65,7 @@ export default function ManageTournamentRoundsPage() {
       });
       setEditingRoundId(null);
     } else {
-      addRound(quizId, {
+      await addRound(quizId, {
         title: title.trim(),
         scheduled_start_time: new Date(scheduledStart).toISOString(),
         scheduled_end_time: new Date(scheduledEnd).toISOString(),

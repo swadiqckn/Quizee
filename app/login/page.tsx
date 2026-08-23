@@ -13,14 +13,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
-  const handleCredentialsLogin = (e: React.FormEvent) => {
+  const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim()) {
       setError('Please enter your username');
       return;
     }
 
-    const res = login(username, password);
+    const res = await login(username, password);
     if (res.success) {
       if (res.user?.role === 'admin' || res.user?.role === 'superadmin') {
         router.push('/admin/dashboard');
@@ -32,8 +32,8 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleLogin = (role: 'admin' | 'participant' = 'participant') => {
-    const res = loginWithGoogle(role);
+  const handleGoogleLogin = async (role: 'admin' | 'participant' = 'participant') => {
+    const res = await loginWithGoogle(role);
     if (res.success) {
       if (role === 'admin') {
         router.push('/admin/dashboard');

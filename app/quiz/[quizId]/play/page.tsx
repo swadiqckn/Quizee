@@ -145,9 +145,9 @@ function QuizPlayContent() {
     }
   };
 
-  const finishQuiz = (finalAnswersLog: typeof answersLog) => {
+  const finishQuiz = async (finalAnswersLog: typeof answersLog) => {
     setIsSubmitting(true);
-    const result = submitQuizAttempt({
+    const result = await submitQuizAttempt({
       quizId,
       roundId: roundId || null,
       answers: finalAnswersLog,

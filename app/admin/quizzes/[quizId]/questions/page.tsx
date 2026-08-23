@@ -77,7 +77,7 @@ export default function ManageQuestionsPage() {
     setOptions((prev) => prev.filter((o) => o.id !== id));
   };
 
-  const handleSaveQuestion = (e: React.FormEvent) => {
+  const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!questionText.trim()) return;
 
@@ -88,7 +88,7 @@ export default function ManageQuestionsPage() {
     }
 
     if (editingQuestionId) {
-      updateQuestion(editingQuestionId, {
+      await updateQuestion(editingQuestionId, {
         round_id: quiz.quiz_type === 'tournament' ? targetRoundId : null,
         question_text: questionText.trim(),
         attachment_url: attachmentUrl.trim() || null,
@@ -100,7 +100,7 @@ export default function ManageQuestionsPage() {
       });
       setEditingQuestionId(null);
     } else {
-      addQuestion({
+      await addQuestion({
         quiz_id: quizId,
         round_id: quiz.quiz_type === 'tournament' ? targetRoundId : null,
         question_text: questionText.trim(),

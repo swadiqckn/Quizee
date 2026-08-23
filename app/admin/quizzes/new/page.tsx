@@ -69,14 +69,14 @@ export default function NewQuizPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
 
     setIsSubmitting(true);
     setErrorMessage(null);
 
-    const res = createQuiz({
+    const res = await createQuiz({
       title: title.trim(),
       description: description.trim(),
       banner_url: bannerUrl.trim() || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&auto=format&fit=crop&q=80',
@@ -102,7 +102,7 @@ export default function NewQuizPage() {
 
     // If tournament, create initial rounds
     if (quizType === 'tournament') {
-      addRound(created.id, {
+      await addRound(created.id, {
         round_number: 1,
         title: round1Title,
         scheduled_start_time: new Date(round1Start).toISOString(),
@@ -112,7 +112,7 @@ export default function NewQuizPage() {
         status: 'active',
       });
 
-      addRound(created.id, {
+      await addRound(created.id, {
         round_number: 2,
         title: round2Title,
         scheduled_start_time: new Date(round2Start).toISOString(),

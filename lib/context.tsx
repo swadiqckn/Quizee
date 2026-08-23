@@ -14,17 +14,8 @@ import {
   PlanType,
   PLAN_CONFIG,
 } from './types';
-import {
-  MOCK_ORGS,
-  MOCK_USERS,
-  MOCK_QUIZZES,
-  MOCK_ROUNDS,
-  MOCK_QUESTIONS,
-  MOCK_ENTRIES,
-  MOCK_WINNERS,
-  MOCK_REFERRALS,
-} from './mock-data';
 import { calculateQuestionPoints, evaluateQualification } from './scoring';
+import { createClient } from './supabase/client';
 
 interface QuizPlatformContextType {
   currentUser: Profile | null;
@@ -40,16 +31,17 @@ interface QuizPlatformContextType {
   entries: Entry[];
   winners: Winner[];
   referrals: Referral[];
+  isLoading: boolean;
   
   // Auth
-  login: (username: string, password?: string) => { success: boolean; message?: string; user?: Profile };
+  login: (username: string, password?: string) => Promise<{ success: boolean; message?: string; user?: Profile }>;
   loginWithGoogle: (
     options?:
       | 'admin'
       | 'superadmin'
       | 'participant'
       | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string }
-  ) => { success: boolean; user: Profile };
+  ) => Promise<{ success: boolean; user: Profile }>;
   register: (params: {
     username: string;
     password?: string;
@@ -57,27 +49,27 @@ interface QuizPlatformContextType {
     referralCode?: string;
     role?: 'superadmin' | 'admin' | 'participant';
     orgId?: string;
-  }) => { success: boolean; message?: string; user?: Profile };
+  }) => Promise<{ success: boolean; message?: string; user?: Profile }>;
   logout: () => void;
 
   // Subscription / Plan Actions
-  upgradeActiveOrgPlan: (newPlan: PlanType) => void;
+  upgradeActiveOrgPlan: (newPlan: PlanType) => Promise<void>;
   canCreateQuiz: () => { allowed: boolean; reason?: string; currentCount: number; maxAllowed: number | 'unlimited' };
 
   // Quiz Actions
-  createQuiz: (quiz: Partial<Quiz>) => { success: boolean; quiz?: Quiz; error?: string };
-  updateQuiz: (id: string, updates: Partial<Quiz>) => void;
-  deleteQuiz: (id: string) => void;
+  createQuiz: (quiz: Partial<Quiz>) => Promise<{ success: boolean; quiz?: Quiz; error?: string }>;
+  updateQuiz: (id: string, updates: Partial<Quiz>) => Promise<void>;
+  deleteQuiz: (id: string) => Promise<void>;
   
   // Round Actions
-  addRound: (quizId: string, round: Partial<TournamentRound>) => TournamentRound;
-  updateRound: (roundId: string, updates: Partial<TournamentRound>) => void;
-  deleteRound: (roundId: string) => void;
+  addRound: (quizId: string, round: Partial<TournamentRound>) => Promise<TournamentRound>;
+  updateRound: (roundId: string, updates: Partial<TournamentRound>) => Promise<void>;
+  deleteRound: (roundId: string) => Promise<void>;
   
   // Question Actions
-  addQuestion: (question: Partial<Question>) => Question;
-  updateQuestion: (questionId: string, updates: Partial<Question>) => void;
-  deleteQuestion: (questionId: string) => void;
+  addQuestion: (question: Partial<Question>) => Promise<Question>;
+  updateQuestion: (questionId: string, updates: Partial<Question>) => Promise<void>;
+  deleteQuestion: (questionId: string) => Promise<void>;
   
   // Arena & Progression Actions
   submitQuizAttempt: (params: {
@@ -88,146 +80,197 @@ interface QuizPlatformContextType {
       selectedOptionIds: string[];
       timeTakenMs: number;
     }>;
-  }) => { entry: Entry; score: number; qualified: boolean; totalCorrect: number };
+  }) => Promise<{ entry: Entry; score: number; qualified: boolean; totalCorrect: number }>;
   
-  manuallyQualifyEntry: (entryId: string, qualified: boolean) => void;
-  applyReferralCode: (code: string) => boolean;
+  manuallyQualifyEntry: (entryId: string, qualified: boolean) => Promise<void>;
+  applyReferralCode: (code: string) => Promise<boolean>;
+  refreshData: () => Promise<void>;
 }
 
 const QuizPlatformContext = createContext<QuizPlatformContextType | undefined>(undefined);
 
 export function QuizPlatformProvider({ children }: { children: React.ReactNode }) {
-  // Start with clean guest state (No demo account logged in at first)
+  const supabase = createClient();
+
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
-  const [allUsers, setAllUsers] = useState<Profile[]>(MOCK_USERS);
-  const [organisations, setOrganisations] = useState<Organisation[]>(MOCK_ORGS);
-  const [activeOrg, setActiveOrg] = useState<Organisation | null>(MOCK_ORGS[0]);
-  const [quizzes, setQuizzes] = useState<Quiz[]>(MOCK_QUIZZES);
-  const [rounds, setRounds] = useState<TournamentRound[]>(MOCK_ROUNDS);
-  const [questions, setQuestions] = useState<Question[]>(MOCK_QUESTIONS);
-  const [entries, setEntries] = useState<Entry[]>(MOCK_ENTRIES);
-  const [winners, setWinners] = useState<Winner[]>(MOCK_WINNERS);
-  const [referrals, setReferrals] = useState<Referral[]>(MOCK_REFERRALS);
+  const [allUsers, setAllUsers] = useState<Profile[]>([]);
+  const [organisations, setOrganisations] = useState<Organisation[]>([]);
+  const [activeOrg, setActiveOrg] = useState<Organisation | null>(null);
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [rounds, setRounds] = useState<TournamentRound[]>([]);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [entries, setEntries] = useState<Entry[]>([]);
+  const [winners, setWinners] = useState<Winner[]>([]);
+  const [referrals, setReferrals] = useState<Referral[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Fetch real database records from Supabase
+  const refreshData = async () => {
+    try {
+      setIsLoading(true);
+
+      // 1. Fetch Organisations
+      const { data: orgsData } = await supabase.from('organisations').select('*');
+      if (orgsData && orgsData.length > 0) {
+        setOrganisations(orgsData);
+        if (!activeOrg) setActiveOrg(orgsData[0]);
+      }
+
+      // 2. Fetch Users
+      const { data: usersData } = await supabase.from('users').select('*');
+      if (usersData) {
+        setAllUsers(usersData);
+      }
+
+      // 3. Fetch Quizzes
+      const { data: quizzesData } = await supabase
+        .from('quizzes')
+        .select('*, organisation:organisations(*)');
+      if (quizzesData) {
+        setQuizzes(quizzesData);
+      }
+
+      // 4. Fetch Tournament Rounds
+      const { data: roundsData } = await supabase.from('tournament_rounds').select('*');
+      if (roundsData) {
+        setRounds(roundsData);
+      }
+
+      // 5. Fetch Questions
+      const { data: questionsData } = await supabase.from('questions').select('*');
+      if (questionsData) {
+        setQuestions(questionsData);
+      }
+
+      // 6. Fetch Entries
+      const { data: entriesData } = await supabase
+        .from('entries')
+        .select('*, user:users(*), quiz:quizzes(*), round:tournament_rounds(*)');
+      if (entriesData) {
+        setEntries(entriesData);
+      }
+
+      // 7. Fetch Winners
+      const { data: winnersData } = await supabase
+        .from('winners')
+        .select('*, user:users(*)');
+      if (winnersData) {
+        setWinners(winnersData);
+      }
+
+      // 8. Fetch Referrals
+      const { data: referralsData } = await supabase
+        .from('referrals')
+        .select('*, referee:users!referrals_referee_id_fkey(*), referrer:users!referrals_referrer_id_fkey(*)');
+      if (referralsData) {
+        setReferrals(referralsData);
+      }
+    } catch (e) {
+      console.error('Supabase live fetch error (will use local state fallback):', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
+    // Restore user session from localStorage
     try {
-      const savedUser = localStorage.getItem('quiz_current_user');
+      const savedUser = localStorage.getItem('quizee_current_user');
       if (savedUser) {
         setCurrentUser(JSON.parse(savedUser));
       }
     } catch (e) {}
+
+    refreshData();
   }, []);
 
-  const login = (username: string, _password?: string) => {
+  const login = async (username: string, _password?: string) => {
     const cleanUsername = username.trim().toLowerCase();
-    const existing = allUsers.find((u) => u.username?.toLowerCase() === cleanUsername);
+    
+    // Check in local cache or query Supabase
+    let user = allUsers.find((u) => u.username?.toLowerCase() === cleanUsername);
 
-    if (!existing) {
+    if (!user) {
+      try {
+        const { data } = await supabase
+          .from('users')
+          .select('*')
+          .ilike('username', cleanUsername)
+          .single();
+        if (data) user = data;
+      } catch (e) {}
+    }
+
+    if (!user) {
       return register({ username: cleanUsername });
     }
 
-    setCurrentUser(existing);
+    setCurrentUser(user);
     try {
-      localStorage.setItem('quiz_current_user', JSON.stringify(existing));
+      localStorage.setItem('quizee_current_user', JSON.stringify(user));
     } catch (e) {}
 
-    return { success: true, user: existing };
+    return { success: true, user };
   };
 
-  const loginWithGoogle = (
-    options: 'admin' | 'superadmin' | 'participant' | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string } = 'admin'
+  const loginWithGoogle = async (
+    options:
+      | 'admin'
+      | 'superadmin'
+      | 'participant'
+      | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string } = 'admin'
   ) => {
     const role = typeof options === 'string' ? options : options.role || 'participant';
     const referralCode = typeof options === 'object' ? options.referralCode : undefined;
     const orgId = typeof options === 'object' ? options.orgId : undefined;
 
-    if (role === 'superadmin') {
-      const superUser = MOCK_USERS[0];
-      setCurrentUser(superUser);
-      try {
-        localStorage.setItem('quiz_current_user', JSON.stringify(superUser));
-      } catch (e) {}
-      return { success: true, user: superUser };
-    }
+    const email = role === 'admin' ? 'admin.host@gmail.com' : 'contestant.google@gmail.com';
+    const cleanUsername = role === 'admin' ? 'admin_host' : `player_${Math.floor(Math.random() * 899 + 100)}`;
+    const fullName = role === 'admin' ? 'Organizer Admin (Google)' : 'Contestant (Google)';
 
-    if (role === 'admin') {
-      const adminUser = MOCK_USERS[1];
-      setCurrentUser(adminUser);
-      try {
-        localStorage.setItem('quiz_current_user', JSON.stringify(adminUser));
-      } catch (e) {}
-      return { success: true, user: adminUser };
-    }
+    let existingUser = allUsers.find((u) => u.email === email || (u.auth_provider === 'google' && u.role === role));
 
-    // Participant signing up / in with Google
-    const existingGoogleParticipant = allUsers.find(
-      (u) => u.auth_provider === 'google' && u.role === 'participant'
-    );
+    if (!existingUser) {
+      const newRefCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+      let referrer: Profile | undefined;
+      if (referralCode) {
+        referrer = allUsers.find((u) => u.referral_code.toUpperCase() === referralCode.trim().toUpperCase());
+      }
 
-    if (existingGoogleParticipant) {
-      setCurrentUser(existingGoogleParticipant);
-      try {
-        localStorage.setItem('quiz_current_user', JSON.stringify(existingGoogleParticipant));
-      } catch (e) {}
-      return { success: true, user: existingGoogleParticipant };
-    }
-
-    const newRefCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-    let referrer: Profile | undefined;
-    if (referralCode) {
-      referrer = allUsers.find((u) => u.referral_code.toUpperCase() === referralCode.trim().toUpperCase());
-    }
-
-    const newGoogleUser: Profile = {
-      id: `google-user-${Date.now()}`,
-      username: `alex_google_${Math.floor(Math.random() * 899 + 100)}`,
-      email: 'alex.contestant@gmail.com',
-      full_name: 'Alex Chen (Google)',
-      avatar_url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&auto=format&fit=crop&q=80',
-      role: 'participant',
-      auth_provider: 'google',
-      google_id: `g_${Date.now()}`,
-      org_id: orgId || activeOrg?.id || 'org-1',
-      referral_code: newRefCode,
-      referred_by: referrer ? referrer.id : null,
-      total_points: referrer ? 10 : 0,
-      total_referrals: 0,
-      created_at: new Date().toISOString(),
-    };
-
-    setAllUsers((prev) => [...prev, newGoogleUser]);
-    setCurrentUser(newGoogleUser);
-
-    if (referrer) {
-      const newReferral: Referral = {
-        id: `ref-${Date.now()}`,
-        referrer_id: referrer.id,
-        referee_id: newGoogleUser.id,
-        quiz_id: null,
-        bonus_points_awarded: 25,
+      const newUser: Profile = {
+        id: `usr-${Date.now()}`,
+        username: cleanUsername,
+        email: email,
+        full_name: fullName,
+        avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&auto=format&fit=crop&q=80`,
+        role: role,
+        auth_provider: 'google',
+        google_id: `g_${Date.now()}`,
+        org_id: orgId || activeOrg?.id || null,
+        referral_code: newRefCode,
+        referred_by: referrer ? referrer.id : null,
+        total_points: referrer ? 10 : 0,
+        total_referrals: 0,
         created_at: new Date().toISOString(),
-        referee: newGoogleUser,
-        referrer: referrer,
       };
-      setReferrals((prev) => [newReferral, ...prev]);
 
-      setAllUsers((prev) =>
-        prev.map((u) =>
-          u.id === referrer?.id
-            ? { ...u, total_points: u.total_points + 25, total_referrals: u.total_referrals + 1 }
-            : u
-        )
-      );
+      try {
+        await supabase.from('users').upsert(newUser);
+      } catch (e) {}
+
+      existingUser = newUser;
+      setAllUsers((prev) => [...prev, newUser]);
     }
 
+    setCurrentUser(existingUser);
     try {
-      localStorage.setItem('quiz_current_user', JSON.stringify(newGoogleUser));
+      localStorage.setItem('quizee_current_user', JSON.stringify(existingUser));
     } catch (e) {}
 
-    return { success: true, user: newGoogleUser };
+    return { success: true, user: existingUser };
   };
 
-  const register = ({
+  const register = async ({
     username,
     _password,
     fullName,
@@ -257,20 +300,24 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     }
 
     const newUser: Profile = {
-      id: `user-${Date.now()}`,
+      id: `usr-${Date.now()}`,
       username: cleanUsername,
       email: `${cleanUsername}@quizee.local`,
       full_name: fullName || cleanUsername,
       avatar_url: `https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=128&auto=format&fit=crop&q=80`,
       role: role,
       auth_provider: 'credentials',
-      org_id: orgId || activeOrg?.id || 'org-1',
+      org_id: orgId || activeOrg?.id || null,
       referral_code: newRefCode,
       referred_by: referrer ? referrer.id : null,
       total_points: referrer ? 10 : 0,
       total_referrals: 0,
       created_at: new Date().toISOString(),
     };
+
+    try {
+      await supabase.from('users').insert(newUser);
+    } catch (e) {}
 
     setAllUsers((prev) => [...prev, newUser]);
     setCurrentUser(newUser);
@@ -286,19 +333,21 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         referee: newUser,
         referrer: referrer,
       };
-      setReferrals((prev) => [newReferral, ...prev]);
 
-      setAllUsers((prev) =>
-        prev.map((u) =>
-          u.id === referrer?.id
-            ? { ...u, total_points: u.total_points + 25, total_referrals: u.total_referrals + 1 }
-            : u
-        )
-      );
+      try {
+        await supabase.from('referrals').insert({
+          id: newReferral.id,
+          referrer_id: referrer.id,
+          referee_id: newUser.id,
+          bonus_points_awarded: 25,
+        });
+      } catch (e) {}
+
+      setReferrals((prev) => [newReferral, ...prev]);
     }
 
     try {
-      localStorage.setItem('quiz_current_user', JSON.stringify(newUser));
+      localStorage.setItem('quizee_current_user', JSON.stringify(newUser));
     } catch (e) {}
 
     return { success: true, user: newUser };
@@ -307,25 +356,31 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   const logout = () => {
     setCurrentUser(null);
     try {
-      localStorage.removeItem('quiz_current_user');
+      localStorage.removeItem('quizee_current_user');
     } catch (e) {}
   };
 
   const switchUserRole = (role: 'superadmin' | 'admin' | 'participant') => {
-    const targetUser = allUsers.find((u) => u.role === role) || MOCK_USERS.find((u) => u.role === role);
+    const targetUser = allUsers.find((u) => u.role === role);
     if (targetUser) {
       setCurrentUser(targetUser);
       try {
-        localStorage.setItem('quiz_current_user', JSON.stringify(targetUser));
+        localStorage.setItem('quizee_current_user', JSON.stringify(targetUser));
       } catch (e) {}
+    } else {
+      loginWithGoogle(role);
     }
   };
 
-  const upgradeActiveOrgPlan = (newPlan: PlanType) => {
+  const upgradeActiveOrgPlan = async (newPlan: PlanType) => {
     if (!activeOrg) return;
     const updatedOrg = { ...activeOrg, plan: newPlan };
     setActiveOrg(updatedOrg);
     setOrganisations((prev) => prev.map((o) => (o.id === activeOrg.id ? updatedOrg : o)));
+
+    try {
+      await supabase.from('organisations').update({ plan: newPlan }).eq('id', activeOrg.id);
+    } catch (e) {}
   };
 
   const canCreateQuiz = () => {
@@ -345,7 +400,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     return { allowed: true, currentCount, maxAllowed };
   };
 
-  const createQuiz = (quizData: Partial<Quiz>): { success: boolean; quiz?: Quiz; error?: string } => {
+  const createQuiz = async (quizData: Partial<Quiz>): Promise<{ success: boolean; quiz?: Quiz; error?: string }> => {
     const check = canCreateQuiz();
     if (!check.allowed) {
       return { success: false, error: check.reason };
@@ -355,8 +410,8 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     const participantCap = currentPlan === 'free' ? 100 : null;
 
     const newQuiz: Quiz = {
-      id: `quiz-${Date.now()}`,
-      org_id: activeOrg?.id || 'org-1',
+      id: `qz-${Date.now()}`,
+      org_id: activeOrg?.id || 'org-main',
       title: quizData.title || 'Untitled Quiz',
       description: quizData.description || '',
       banner_url: quizData.banner_url || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&auto=format&fit=crop&q=80',
@@ -380,6 +435,27 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       questions_count: 0,
     };
 
+    try {
+      await supabase.from('quizzes').insert({
+        id: newQuiz.id,
+        org_id: newQuiz.org_id,
+        title: newQuiz.title,
+        description: newQuiz.description,
+        banner_url: newQuiz.banner_url,
+        quiz_type: newQuiz.quiz_type,
+        progression_mode: newQuiz.progression_mode,
+        scoring_strategy: newQuiz.scoring_strategy,
+        base_points_per_question: newQuiz.base_points_per_question,
+        time_limit_per_question_sec: newQuiz.time_limit_per_question_sec,
+        shuffle_questions: newQuiz.shuffle_questions,
+        shuffle_options: newQuiz.shuffle_options,
+        enable_referral_bonus: newQuiz.enable_referral_bonus,
+        referral_bonus_points: newQuiz.referral_bonus_points,
+        status: newQuiz.status,
+        max_participants: newQuiz.max_participants,
+      });
+    } catch (e) {}
+
     setQuizzes((prev) => [newQuiz, ...prev]);
 
     if (activeOrg) {
@@ -394,20 +470,26 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     return { success: true, quiz: newQuiz };
   };
 
-  const updateQuiz = (id: string, updates: Partial<Quiz>) => {
+  const updateQuiz = async (id: string, updates: Partial<Quiz>) => {
     setQuizzes((prev) =>
       prev.map((q) => (q.id === id ? { ...q, ...updates, updated_at: new Date().toISOString() } : q))
     );
+    try {
+      await supabase.from('quizzes').update(updates).eq('id', id);
+    } catch (e) {}
   };
 
-  const deleteQuiz = (id: string) => {
+  const deleteQuiz = async (id: string) => {
     setQuizzes((prev) => prev.filter((q) => q.id !== id));
+    try {
+      await supabase.from('quizzes').delete().eq('id', id);
+    } catch (e) {}
   };
 
-  const addRound = (quizId: string, roundData: Partial<TournamentRound>): TournamentRound => {
+  const addRound = async (quizId: string, roundData: Partial<TournamentRound>): Promise<TournamentRound> => {
     const existingForQuiz = rounds.filter((r) => r.quiz_id === quizId);
     const newRound: TournamentRound = {
-      id: `round-${Date.now()}`,
+      id: `rnd-${Date.now()}`,
       quiz_id: quizId,
       round_number: existingForQuiz.length + 1,
       title: roundData.title || `Round ${existingForQuiz.length + 1}`,
@@ -420,23 +502,33 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       created_at: new Date().toISOString(),
     };
 
+    try {
+      await supabase.from('tournament_rounds').insert(newRound);
+    } catch (e) {}
+
     setRounds((prev) => [...prev, newRound]);
     return newRound;
   };
 
-  const updateRound = (roundId: string, updates: Partial<TournamentRound>) => {
+  const updateRound = async (roundId: string, updates: Partial<TournamentRound>) => {
     setRounds((prev) =>
       prev.map((r) => (r.id === roundId ? { ...r, ...updates, updated_at: new Date().toISOString() } : r))
     );
+    try {
+      await supabase.from('tournament_rounds').update(updates).eq('id', roundId);
+    } catch (e) {}
   };
 
-  const deleteRound = (roundId: string) => {
+  const deleteRound = async (roundId: string) => {
     setRounds((prev) => prev.filter((r) => r.id !== roundId));
+    try {
+      await supabase.from('tournament_rounds').delete().eq('id', roundId);
+    } catch (e) {}
   };
 
-  const addQuestion = (qData: Partial<Question>): Question => {
+  const addQuestion = async (qData: Partial<Question>): Promise<Question> => {
     const newQ: Question = {
-      id: `q-${Date.now()}`,
+      id: `qst-${Date.now()}`,
       quiz_id: qData.quiz_id!,
       round_id: qData.round_id || null,
       order_index: (questions.filter((q) => q.quiz_id === qData.quiz_id).length + 1),
@@ -453,6 +545,10 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       created_at: new Date().toISOString(),
     };
 
+    try {
+      await supabase.from('questions').insert(newQ);
+    } catch (e) {}
+
     setQuestions((prev) => [...prev, newQ]);
     
     setQuizzes((prev) =>
@@ -464,24 +560,32 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     return newQ;
   };
 
-  const updateQuestion = (questionId: string, updates: Partial<Question>) => {
+  const updateQuestion = async (questionId: string, updates: Partial<Question>) => {
     setQuestions((prev) =>
       prev.map((q) => (q.id === questionId ? { ...q, ...updates, updated_at: new Date().toISOString() } : q))
     );
+    try {
+      await supabase.from('questions').update(updates).eq('id', questionId);
+    } catch (e) {}
   };
 
-  const deleteQuestion = (questionId: string) => {
+  const deleteQuestion = async (questionId: string) => {
     const target = questions.find((q) => q.id === questionId);
     if (!target) return;
+
     setQuestions((prev) => prev.filter((q) => q.id !== questionId));
     setQuizzes((prev) =>
       prev.map((qz) =>
         qz.id === target.quiz_id ? { ...qz, questions_count: Math.max(0, (qz.questions_count || 1) - 1) } : qz
       )
     );
+
+    try {
+      await supabase.from('questions').delete().eq('id', questionId);
+    } catch (e) {}
   };
 
-  const submitQuizAttempt = ({
+  const submitQuizAttempt = async ({
     quizId,
     roundId,
     answers,
@@ -530,7 +634,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     });
 
     const newEntry: Entry = {
-      id: `entry-${Date.now()}`,
+      id: `ent-${Date.now()}`,
       quiz_id: quizId,
       round_id: roundId,
       user_id: currentUser?.id || 'guest-contestant',
@@ -545,6 +649,20 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       quiz: targetQuiz,
       round: targetRound,
     };
+
+    try {
+      await supabase.from('entries').insert({
+        id: newEntry.id,
+        quiz_id: newEntry.quiz_id,
+        round_id: newEntry.round_id,
+        user_id: newEntry.user_id,
+        score: newEntry.score,
+        total_correct: newEntry.total_correct,
+        total_time_taken_ms: newEntry.total_time_taken_ms,
+        qualified_for_next_round: newEntry.qualified_for_next_round,
+        status: newEntry.status,
+      });
+    } catch (e) {}
 
     setEntries((prev) => [newEntry, ...prev]);
 
@@ -563,13 +681,16 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     };
   };
 
-  const manuallyQualifyEntry = (entryId: string, qualified: boolean) => {
+  const manuallyQualifyEntry = async (entryId: string, qualified: boolean) => {
     setEntries((prev) =>
       prev.map((e) => (e.id === entryId ? { ...e, qualified_for_next_round: qualified } : e))
     );
+    try {
+      await supabase.from('entries').update({ qualified_for_next_round: qualified }).eq('id', entryId);
+    } catch (e) {}
   };
 
-  const applyReferralCode = (code: string): boolean => {
+  const applyReferralCode = async (code: string): Promise<boolean> => {
     if (!currentUser) return false;
     const referrer = allUsers.find((u) => u.referral_code.toUpperCase() === code.trim().toUpperCase());
     if (!referrer || referrer.id === currentUser.id) return false;
@@ -584,6 +705,15 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       referee: currentUser,
       referrer: referrer,
     };
+
+    try {
+      await supabase.from('referrals').insert({
+        id: newReferral.id,
+        referrer_id: referrer.id,
+        referee_id: currentUser.id,
+        bonus_points_awarded: 25,
+      });
+    } catch (e) {}
 
     setReferrals((prev) => [newReferral, ...prev]);
     
@@ -622,6 +752,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         entries,
         winners,
         referrals,
+        isLoading,
         login,
         loginWithGoogle,
         register,
@@ -640,6 +771,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         submitQuizAttempt,
         manuallyQualifyEntry,
         applyReferralCode,
+        refreshData,
       }}
     >
       {children}

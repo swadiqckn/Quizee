@@ -68,11 +68,11 @@ export default function ReferralsPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleClaimCode = (e: React.FormEvent) => {
+  const handleClaimCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputCode.trim()) return;
 
-    const success = applyReferralCode(inputCode.trim());
+    const success = await applyReferralCode(inputCode.trim());
     if (success) {
       setClaimStatus({
         type: 'success',

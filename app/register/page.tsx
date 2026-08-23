@@ -12,8 +12,8 @@ function RegisterForm() {
   const referralCode = searchParams.get('ref') || undefined;
   const { loginWithGoogle } = useQuizPlatform();
 
-  const handleAdminGoogleRegister = () => {
-    const res = loginWithGoogle({ role: 'admin', referralCode });
+  const handleAdminGoogleRegister = async () => {
+    const res = await loginWithGoogle({ role: 'admin', referralCode });
     if (res.success) {
       router.push('/admin/dashboard');
     }
