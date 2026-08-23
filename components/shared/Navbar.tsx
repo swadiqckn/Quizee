@@ -49,16 +49,14 @@ export function Navbar() {
     if (currentUser?.role === 'superadmin') {
       navLinks.push({ href: '/superadmin', label: 'Superadmin Console', icon: ShieldCheck });
     }
-  } else {
-    // Navigation for Contestants, Students, and Guests
+  } else if (currentUser) {
+    // Participant header: ONLY referrals
     navLinks = [
-      { href: '/explore', label: 'Explore Quizzes', icon: Compass },
-      { href: '/demo', label: 'Interactive Demo', icon: Sparkles },
-      { href: '/admin/billing', label: 'Plans & Pricing', icon: Crown },
+      { href: '/referrals', label: 'Referrals & Rewards', icon: Gift },
     ];
-    if (currentUser) {
-      navLinks.push({ href: '/referrals', label: 'Referrals & Rewards', icon: Gift });
-    }
+  } else {
+    // Guest minimal navigation
+    navLinks = [];
   }
 
   return (

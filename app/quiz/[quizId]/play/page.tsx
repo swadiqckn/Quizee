@@ -224,8 +224,13 @@ function QuizPlayContent() {
           <div className="space-y-3 pt-2">
             <button
               onClick={() => {
-                loginWithGoogle('participant');
-                setQuestionStartTime(Date.now());
+                if (typeof window !== 'undefined') {
+                  loginWithGoogle({
+                    role: 'participant',
+                    returnUrl: window.location.pathname + window.location.search,
+                  });
+                  setQuestionStartTime(Date.now());
+                }
               }}
               type="button"
               className="w-full py-4 px-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-xl shadow-[#e05a38]/25 transition flex items-center justify-center gap-3 hover:scale-[1.02]"

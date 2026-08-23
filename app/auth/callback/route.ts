@@ -107,6 +107,11 @@ export async function GET(request: NextRequest) {
         }
       }
 
+      const returnUrl = requestUrl.searchParams.get('returnUrl');
+      if (returnUrl) {
+        return NextResponse.redirect(`${origin}${returnUrl.startsWith('/') ? returnUrl : `/${returnUrl}`}`);
+      }
+
       if (role === 'admin' || role === 'superadmin') {
         return NextResponse.redirect(`${origin}/admin/dashboard`);
       } else {

@@ -33,6 +33,7 @@ export default function NewQuizPage() {
 
   // Basic Information
   const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
   const [description, setDescription] = useState('');
   const [bannerUrl, setBannerUrl] = useState('');
 
@@ -45,9 +46,10 @@ export default function NewQuizPage() {
   const [basePoints, setBasePoints] = useState<number>(10);
   const [timeLimitSec, setTimeLimitSec] = useState<number>(15);
 
-  // Randomization Settings
+  // Randomization & Retry Settings
   const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(false);
   const [shuffleOptions, setShuffleOptions] = useState<boolean>(true);
+  const [allowRetries, setAllowRetries] = useState<boolean>(false);
 
   // Referral System Settings
   const [enableReferralBonus, setEnableReferralBonus] = useState<boolean>(true);
@@ -78,6 +80,7 @@ export default function NewQuizPage() {
 
     const res = await createQuiz({
       title: title.trim(),
+      slug: slug.trim() || undefined,
       description: description.trim(),
       banner_url: bannerUrl.trim() || 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200&auto=format&fit=crop&q=80',
       quiz_type: quizType,
@@ -89,6 +92,7 @@ export default function NewQuizPage() {
       shuffle_options: shuffleOptions,
       enable_referral_bonus: enableReferralBonus,
       referral_bonus_points: Number(referralBonusPoints),
+      allow_retries: allowRetries,
       status: 'published',
     });
 
@@ -216,6 +220,25 @@ export default function NewQuizPage() {
                 onChange={(e) => setTitle(e.target.value)}
                 className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#e05a38]"
               />
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-slate-700 block mb-1.5">
+                Custom URL Slug (Short Link)
+              </label>
+              <div className="flex items-center rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3 focus-within:border-[#e05a38]">
+                <span className="text-xs font-bold text-slate-400 font-mono">domain.com/</span>
+                <input
+                  type="text"
+                  placeholder={title.toLowerCase().replace(/[^a-z0-9]/g, '') || 'ziyara26'}
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                  className="w-full bg-transparent text-sm text-slate-900 font-mono font-bold placeholder-slate-400 focus:outline-none ml-1"
+                />
+              </div>
+              <p className="text-[11px] text-slate-500 mt-1 font-medium">
+                Contestants can directly join using <code>/{slug || title.toLowerCase().replace(/[^a-z0-9]/g, '') || 'your-slug'}</code>
+              </p>
             </div>
 
             <div>
@@ -554,6 +577,26 @@ export default function NewQuizPage() {
                   />
                 </div>
               )}
+            </div>
+
+            {/* Attempt & Retries Policy */}
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 sm:col-span-2">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">Contestant Retries Policy</h3>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={allowRetries}
+                  onChange={(e) => setAllowRetries(e.target.checked)}
+                  className="w-4 h-4 rounded text-[#e05a38] border-slate-300 focus:ring-0"
+                />
+                <span className="text-xs font-bold text-slate-800">
+                  Allow Participants to Try Again after Submitting
+                </span>
+              </label>
+              <p className="text-[11px] text-slate-500 font-medium">
+                Default: <strong>Disabled (No retry)</strong>. When enabled, a "Try Again" button will be shown on the results page.
+              </p>
             </div>
           </div>
         </div>

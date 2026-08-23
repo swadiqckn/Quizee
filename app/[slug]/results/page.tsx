@@ -28,13 +28,14 @@ import {
 import { useQuizPlatform } from '@/lib/context';
 import { formatTimeMs, formatDate } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
+import { matchQuizBySlugOrId } from '@/lib/slug';
 import { AnswerReviewItem } from '@/lib/types';
 
-function QuizResultsContent() {
+function SlugQuizResultsContent() {
   const params = useParams();
   const searchParams = useSearchParams();
 
-  const quizId = params.quizId as string;
+  const slug = params.slug as string;
   const entryId = searchParams.get('entryId');
 
   const { quizzes, rounds, questions, entries, currentUser, isLoading } = useQuizPlatform();
@@ -43,8 +44,10 @@ function QuizResultsContent() {
   const [directQuiz, setDirectQuiz] = useState<any>(null);
   const [isFetchingDirect, setIsFetchingDirect] = useState(false);
 
-  const quiz = quizzes.find((q) => q.id === quizId) || directQuiz;
-  const entry = entries.find((e) => e.id === entryId) || entries[0];
+  const quiz = matchQuizBySlugOrId(quizzes, slug) || directQuiz;
+  const quizId = quiz?.id;
+
+  const entry = entries.find((e) => e.id === entryId) || entries.find((e) => e.quiz_id === quizId) || entries[0];
   const round = entry?.round_id ? rounds.find((r) => r.id === entry.round_id) : null;
   const nextRound = round
     ? rounds.find((r) => r.quiz_id === quizId && r.round_number === round.round_number + 1)
@@ -70,7 +73,6 @@ function QuizResultsContent() {
       }
     } catch (e) {}
 
-    // Fallback: construct from questions list
     const quizQList = questions.filter((q) => q.quiz_id === quizId);
     if (quizQList.length > 0) {
       const items: AnswerReviewItem[] = quizQList.map((q, idx) => ({
@@ -90,17 +92,30 @@ function QuizResultsContent() {
   }, [entry?.id, questions.length, quizId]);
 
   React.useEffect(() => {
-    if (!quiz && quizId) {
+    if (!quiz && slug) {
       setIsFetchingDirect(true);
       const supabase = createClient();
       const fetchDirect = async () => {
         try {
-          const { data } = await supabase
+          const { data: byId } = await supabase
             .from('quizzes')
             .select('*, organisation:organisations(*)')
-            .eq('id', quizId)
+            .eq('id', slug)
             .single();
-          if (data) setDirectQuiz(data);
+
+          if (byId) {
+            setDirectQuiz(byId);
+            return;
+          }
+
+          const { data: allQ } = await supabase
+            .from('quizzes')
+            .select('*, organisation:organisations(*)');
+
+          if (allQ) {
+            const matched = matchQuizBySlugOrId(allQ, slug);
+            if (matched) setDirectQuiz(matched);
+          }
         } catch (err) {
         } finally {
           setIsFetchingDirect(false);
@@ -108,7 +123,7 @@ function QuizResultsContent() {
       };
       fetchDirect();
     }
-  }, [quiz, quizId]);
+  }, [quiz, slug]);
 
   // Trigger celebratory confetti on high score or qualification
   useEffect(() => {
@@ -123,8 +138,8 @@ function QuizResultsContent() {
 
   const copyReferral = () => {
     const inviteUrl = currentUser?.referral_code
-      ? `${window.location.origin}/quiz/${quizId}?ref=${currentUser.referral_code}`
-      : `${window.location.origin}/quiz/${quizId}`;
+      ? `${window.location.origin}/${slug}?ref=${currentUser.referral_code}`
+      : `${window.location.origin}/${slug}`;
     navigator.clipboard.writeText(inviteUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
@@ -154,7 +169,7 @@ function QuizResultsContent() {
 
   // Calculate leaderboard for this round
   const roundEntries = entries
-    .filter((e) => e.quiz_id === quizId && (round ? e.round_id === round.id : true))
+    .filter((e) => e.quiz_id === quiz.id && (round ? e.round_id === round.id : true))
     .sort((a, b) => b.score - a.score || a.total_time_taken_ms - b.total_time_taken_ms);
 
   const userRank = roundEntries.findIndex((e) => e.id === entry.id) + 1;
@@ -240,7 +255,7 @@ function QuizResultsContent() {
           {/* Try Again (Only if allowed by quiz organizer) */}
           {allowTryAgain && (
             <Link
-              href={`/quiz/${quizId}/play`}
+              href={`/${slug}/play`}
               className="px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold shadow-lg shadow-[#e05a38]/20 transition flex items-center gap-2"
             >
               <Repeat className="w-3.5 h-3.5" />
@@ -287,7 +302,7 @@ function QuizResultsContent() {
           </div>
 
           <div className="space-y-6">
-            {(breakdown.length > 0 ? breakdown : questions.filter((q) => q.quiz_id === quizId)).map((item: any, idx) => {
+            {(breakdown.length > 0 ? breakdown : questions.filter((q) => q.quiz_id === quiz.id)).map((item: any, idx) => {
               const selectedIds: string[] = item.selected_option_ids || [];
               const isCorrect: boolean = item.is_correct;
               const optionsList = item.options || [];
@@ -458,10 +473,10 @@ function QuizResultsContent() {
   );
 }
 
-export default function QuizResultsPage() {
+export default function SlugQuizResultsPage() {
   return (
     <Suspense fallback={<div className="max-w-xl mx-auto py-20 text-center text-slate-400 text-xs">Loading Results...</div>}>
-      <QuizResultsContent />
+      <SlugQuizResultsContent />
     </Suspense>
   );
 }

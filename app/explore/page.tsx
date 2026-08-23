@@ -18,7 +18,8 @@ import {
 import { useQuizPlatform } from '@/lib/context';
 
 export default function ExplorePage() {
-  const { quizzes, activeOrg } = useQuizPlatform();
+  const { quizzes, currentUser, activeOrg } = useQuizPlatform();
+  const isAdmin = currentUser?.role === 'admin' || currentUser?.role === 'superadmin';
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<'all' | 'tournament' | 'single'>('all');
   const [selectedStrategy, setSelectedStrategy] = useState<'all' | 'time_decay' | 'fixed'>('all');
@@ -46,15 +47,17 @@ export default function ExplorePage() {
             Discover single-round challenges, speed-decay arenas, and multi-level championships.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            href="/admin/quizzes/new"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-xs font-bold text-white transition shadow-md shadow-[#e05a38]/20"
-          >
-            <Sparkles className="w-4 h-4" />
-            Create Competition
-          </Link>
-        </div>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin/quizzes/new"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-xs font-bold text-white transition shadow-md shadow-[#e05a38]/20"
+            >
+              <Sparkles className="w-4 h-4" />
+              Create Competition
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Filters Bar */}

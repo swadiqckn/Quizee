@@ -85,6 +85,7 @@ export interface Profile {
 export interface Quiz {
   id: string;
   org_id: string;
+  slug?: string;
   title: string;
   description: string | null;
   banner_url: string | null;
@@ -98,6 +99,7 @@ export interface Quiz {
   shuffle_options: boolean;
   enable_referral_bonus: boolean;
   referral_bonus_points: number;
+  allow_retries?: boolean; // When true, contestants can try again from results page (default: false)
   status: QuizStatus;
   max_participants: number | null; // 100 for Free, null for Unlimited (Plus)
   start_time: string | null;
@@ -149,6 +151,19 @@ export interface Question {
   updated_at?: string;
 }
 
+export interface AnswerReviewItem {
+  question_id: string;
+  question_text: string;
+  order_index: number;
+  points: number;
+  points_awarded: number;
+  time_taken_ms: number;
+  selected_option_ids: string[];
+  is_correct: boolean;
+  options: QuestionOption[];
+  explanation: string | null;
+}
+
 export interface Entry {
   id: string;
   quiz_id: string;
@@ -164,6 +179,7 @@ export interface Entry {
   user?: Profile;
   quiz?: Quiz;
   round?: TournamentRound;
+  answers_breakdown?: AnswerReviewItem[];
 }
 
 export interface QuestionResponse {

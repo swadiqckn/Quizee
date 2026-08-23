@@ -15,6 +15,7 @@ import {
   PLAN_CONFIG,
 } from './types';
 import { calculateQuestionPoints, evaluateQualification } from './scoring';
+import { slugify } from './slug';
 import { createClient } from './supabase/client';
 
 const generateUUID = () => {
@@ -51,7 +52,7 @@ interface QuizPlatformContextType {
       | 'admin'
       | 'superadmin'
       | 'participant'
-      | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string }
+      | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string; returnUrl?: string }
   ) => Promise<{ success: boolean; error?: string }>;
   register: (params: {
     username: string;
@@ -324,13 +325,14 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       | 'admin'
       | 'superadmin'
       | 'participant'
-      | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string } = 'admin'
+      | { role?: 'admin' | 'superadmin' | 'participant'; referralCode?: string; orgId?: string; returnUrl?: string } = 'admin'
   ) => {
     const role = typeof options === 'string' ? options : options.role || 'participant';
     const referralCode = typeof options === 'object' ? options.referralCode : undefined;
+    const returnUrl = typeof options === 'object' ? options.returnUrl : undefined;
 
     const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const redirectTo = `${origin}/auth/callback?role=${role}${referralCode ? `&ref=${encodeURIComponent(referralCode)}` : ''}`;
+    const redirectTo = `${origin}/auth/callback?role=${role}${referralCode ? `&ref=${encodeURIComponent(referralCode)}` : ''}${returnUrl ? `&returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -518,24 +520,34 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       created_by: currentUser?.id || null,
     };
 
+    const generatedSlug = quizData.slug?.trim() || slugify(quizData.title || 'quiz');
+    const allowRetries = quizData.allow_retries === true;
+
     let newQuiz: Quiz;
 
     try {
+      // First attempt with slug and allow_retries
       const { data: dbQuiz, error } = await supabase
         .from('quizzes')
-        .insert(quizInsert)
+        .insert({
+          ...quizInsert,
+        })
         .select('*, organisation:organisations(*)')
         .single();
 
       if (!error && dbQuiz) {
         newQuiz = {
           ...dbQuiz,
+          slug: generatedSlug,
+          allow_retries: allowRetries,
           questions_count: 0,
         };
       } else {
         newQuiz = {
           id: generateUUID(),
           ...quizInsert,
+          slug: generatedSlug,
+          allow_retries: allowRetries,
           created_at: new Date().toISOString(),
           organisation: activeOrg || undefined,
           questions_count: 0,
@@ -545,6 +557,8 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       newQuiz = {
         id: generateUUID(),
         ...quizInsert,
+        slug: generatedSlug,
+        allow_retries: allowRetries,
         created_at: new Date().toISOString(),
         organisation: activeOrg || undefined,
         questions_count: 0,
@@ -775,6 +789,38 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       minCorrectToQualify: targetRound?.min_correct_to_qualify,
     });
 
+    const answersBreakdown: any[] = answers.map((ans, idx) => {
+      const q = questions.find((item) => item.id === ans.questionId);
+      const correctOptionIds = q ? q.options.filter((o) => o.is_correct).map((o) => o.id) : [];
+      const isCorrect =
+        correctOptionIds.length > 0 &&
+        correctOptionIds.length === ans.selectedOptionIds.length &&
+        correctOptionIds.every((id) => ans.selectedOptionIds.includes(id));
+
+      const pts = isCorrect
+        ? calculateQuestionPoints({
+            strategy,
+            basePoints: q ? q.points : 10,
+            timeLimitSec: q?.time_limit_sec || targetQuiz?.time_limit_per_question_sec || 15,
+            timeTakenMs: ans.timeTakenMs,
+            isCorrect: true,
+          })
+        : 0;
+
+      return {
+        question_id: ans.questionId,
+        question_text: q ? q.question_text : `Question ${idx + 1}`,
+        order_index: q?.order_index || idx + 1,
+        points: q ? q.points : 10,
+        points_awarded: pts,
+        time_taken_ms: ans.timeTakenMs,
+        selected_option_ids: ans.selectedOptionIds,
+        is_correct: isCorrect,
+        options: q ? q.options : [],
+        explanation: q?.explanation || null,
+      };
+    });
+
     const entryPayload = {
       quiz_id: quizId,
       round_id: roundId,
@@ -798,7 +844,10 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         .single();
 
       if (!error && dbEntry) {
-        newEntry = dbEntry;
+        newEntry = {
+          ...dbEntry,
+          answers_breakdown: answersBreakdown,
+        };
       } else {
         newEntry = {
           id: generateUUID(),
@@ -806,6 +855,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
           user: currentUser || undefined,
           quiz: targetQuiz,
           round: targetRound,
+          answers_breakdown: answersBreakdown,
         };
       }
     } catch (e) {
@@ -815,8 +865,15 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         user: currentUser || undefined,
         quiz: targetQuiz,
         round: targetRound,
+        answers_breakdown: answersBreakdown,
       };
     }
+
+    try {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(`quizee_breakdown_${newEntry.id}`, JSON.stringify(answersBreakdown));
+      }
+    } catch (e) {}
 
     setEntries((prev) => [newEntry, ...prev]);
 
