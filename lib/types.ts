@@ -85,6 +85,8 @@ export interface Profile {
   organisation?: Organisation;
 }
 
+export type DecayStartSource = 'question_open' | 'scheduled_start';
+
 export interface Quiz {
   id: string;
   org_id: string;
@@ -98,6 +100,8 @@ export interface Quiz {
   base_points_per_question: number;
   time_limit_per_question_sec: number;
   total_time_limit_sec: number | null;
+  decay_start_source?: DecayStartSource; // 'question_open' (default) vs 'scheduled_start' (synchronous countdown from scheduled kickoff)
+  decay_min_points?: number; // Minimum floor points awarded for correct answer on timer expiry (default: 1)
   shuffle_questions: boolean;
   shuffle_options: boolean;
   enable_referral_bonus: boolean;
@@ -128,6 +132,8 @@ export interface TournamentRound {
   min_score_to_qualify: number;
   min_correct_to_qualify: number;
   max_qualifiers: number | null;
+  decay_start_source?: DecayStartSource;
+  decay_min_points?: number;
   status: RoundStatus;
   created_at: string;
   updated_at?: string;

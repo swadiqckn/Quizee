@@ -6,13 +6,14 @@ export interface ScoringParams {
   timeLimitSec: number;
   timeTakenMs: number;
   isCorrect: boolean;
+  decayMinPoints?: number;
 }
 
 /**
  * Calculates score for a question response based on strategy (Fixed vs Time Decay)
  * In Time-Decay mode:
  * Max points = basePoints (e.g. 10)
- * As time elapses up to timeLimitSec, points decay proportionally.
+ * As time elapses up to timeLimitSec, points decay proportionally down to decayMinPoints.
  * Example: 10s limit, base 10 points, answered in 6s => 4 points awarded.
  */
 export function calculateQuestionPoints({
@@ -21,6 +22,7 @@ export function calculateQuestionPoints({
   timeLimitSec,
   timeTakenMs,
   isCorrect,
+  decayMinPoints = 1,
 }: ScoringParams): number {
   if (!isCorrect) return 0;
   if (basePoints <= 0) return 0;
@@ -37,8 +39,9 @@ export function calculateQuestionPoints({
   const fractionRemaining = Math.max(0, 1 - timeTakenSec / effectiveLimit);
   const calculatedPoints = Math.round(basePoints * fractionRemaining);
 
-  // Award at least 1 point for a correct answer submitted within limit
-  return Math.max(1, calculatedPoints);
+  // Award at least decayMinPoints (e.g. 0, 1, 2, 5) for a correct answer
+  const floorPts = Math.max(0, Number(decayMinPoints ?? 1));
+  return Math.max(floorPts, calculatedPoints);
 }
 
 /**

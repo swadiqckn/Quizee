@@ -67,23 +67,14 @@ export function Navbar() {
     navLinks = [];
   }
 
-  const isQuizPage =
-    pathname.startsWith('/quiz/') ||
-    (pathname !== '/' &&
-      pathname !== '/login' &&
-      pathname !== '/register' &&
-      pathname !== '/explore' &&
-      !pathname.startsWith('/admin') &&
-      pathname !== '/superadmin' &&
-      pathname !== '/demo' &&
-      pathname !== '/referrals');
+  const isQuizPlayPage = pathname.endsWith('/play');
 
   return (
-    <header className={`sticky top-0 z-50 w-full border-b border-[#ebdcd1] bg-[#fffaf5]/90 backdrop-blur-md transition-all ${isQuizPage ? 'hidden sm:block' : ''}`}>
+    <header className={`sticky top-0 z-50 w-full border-b border-[#ebdcd1] bg-[#fffaf5]/90 backdrop-blur-md transition-all ${isQuizPlayPage ? 'hidden sm:block' : 'block'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 py-2.5 flex items-center justify-between gap-4">
         {/* Brand Logo or White-label Portal Indicator */}
         <div className="flex items-center gap-4">
-          {isQuizPage ? (
+          {isQuizPlayPage ? (
             <div className="flex items-center gap-2">
               <span className="w-2.5 h-2.5 rounded-full bg-[#e05a38] animate-pulse"></span>
               <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">

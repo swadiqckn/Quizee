@@ -22,7 +22,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
-import { QuizType, ProgressionMode, ScoringStrategy, PlanType, PLAN_CONFIG } from '@/lib/types';
+import { QuizType, ProgressionMode, ScoringStrategy, PlanType, PLAN_CONFIG, DecayStartSource } from '@/lib/types';
 
 export default function NewQuizPage() {
   const router = useRouter();
@@ -45,6 +45,8 @@ export default function NewQuizPage() {
   const [scoringStrategy, setScoringStrategy] = useState<ScoringStrategy>('time_decay');
   const [basePoints, setBasePoints] = useState<number>(10);
   const [timeLimitSec, setTimeLimitSec] = useState<number>(15);
+  const [decayStartSource, setDecayStartSource] = useState<DecayStartSource>('question_open');
+  const [decayMinPoints, setDecayMinPoints] = useState<number>(1);
 
   // Randomization & Retry Settings
   const [shuffleQuestions, setShuffleQuestions] = useState<boolean>(false);
@@ -93,6 +95,8 @@ export default function NewQuizPage() {
       scoring_strategy: scoringStrategy,
       base_points_per_question: Number(basePoints),
       time_limit_per_question_sec: Number(timeLimitSec),
+      decay_start_source: decayStartSource,
+      decay_min_points: Number(decayMinPoints),
       shuffle_questions: shuffleQuestions,
       shuffle_options: shuffleOptions,
       enable_referral_bonus: enableReferralBonus,
@@ -653,6 +657,103 @@ export default function NewQuizPage() {
               </div>
             </div>
           </div>
+
+          {/* Time-Decay Advanced Configuration Options */}
+          {scoringStrategy === 'time_decay' && (
+            <div className="p-5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-4 pt-4">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-700" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-amber-900">
+                  Time-Decay Reference & Minimum Floor Points Settings
+                </h3>
+              </div>
+
+              {/* Decay Anchor Mode */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-800 block">
+                  Time Decay Countdown Reference Source
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setDecayStartSource('question_open')}
+                    className={`p-3.5 rounded-xl border text-left transition ${
+                      decayStartSource === 'question_open'
+                        ? 'bg-white border-amber-500 shadow-sm text-slate-900'
+                        : 'bg-amber-100/50 border-amber-200 text-slate-600 hover:bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-slate-900">⏱️ Per-Question Open Time</span>
+                      {decayStartSource === 'question_open' && <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />}
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-snug">
+                      Points decay individually from the instant each participant opens and views each question.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDecayStartSource('scheduled_start')}
+                    className={`p-3.5 rounded-xl border text-left transition ${
+                      decayStartSource === 'scheduled_start'
+                        ? 'bg-white border-amber-500 shadow-sm text-slate-900'
+                        : 'bg-amber-100/50 border-amber-200 text-slate-600 hover:bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-xs text-slate-900">📅 Scheduled Start Time (Synchronous)</span>
+                      {decayStartSource === 'scheduled_start' && <CheckCircle2 className="w-3.5 h-3.5 text-amber-600" />}
+                    </div>
+                    <p className="text-[11px] text-slate-500 leading-snug">
+                      Points decay synchronously from official competition kickoff. Late joiners lose elapsed decay points.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Floor Points on Expiry */}
+              <div className="space-y-1.5 pt-1">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-slate-800">
+                    Minimum Floor Points on Timer Expiry
+                  </label>
+                  <span className="text-[11px] font-bold text-amber-800 font-mono">
+                    Guaranteed {decayMinPoints} pts minimum
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  When the question timer runs down to zero, correct answers submitted will receive at least this guaranteed base score.
+                </p>
+                <div className="flex items-center gap-2 pt-1">
+                  {[0, 1, 2, 5].map((val) => (
+                    <button
+                      key={val}
+                      type="button"
+                      onClick={() => setDecayMinPoints(val)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                        decayMinPoints === val
+                          ? 'bg-amber-600 text-white shadow-xs'
+                          : 'bg-white border border-amber-200 text-slate-700 hover:bg-amber-100/50'
+                      }`}
+                    >
+                      {val === 0 ? '0 pts (Zero)' : `${val} pt${val > 1 ? 's' : ''}`}
+                    </button>
+                  ))}
+                  <div className="flex-1 max-w-[120px]">
+                    <input
+                      type="number"
+                      min="0"
+                      value={decayMinPoints}
+                      onChange={(e) => setDecayMinPoints(Math.max(0, Number(e.target.value)))}
+                      className="w-full px-3 py-1.5 rounded-xl bg-white border border-amber-200 text-xs text-slate-900 font-bold text-center"
+                      placeholder="Custom"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Section 4: Randomization & Referral System */}

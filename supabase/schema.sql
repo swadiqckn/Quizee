@@ -132,6 +132,8 @@ CREATE TABLE IF NOT EXISTS public.quizzes (
     referral_bonus_points NUMERIC DEFAULT 10 NOT NULL,
     anti_cheat_enabled BOOLEAN DEFAULT FALSE NOT NULL,
     max_violations INTEGER DEFAULT 3 NOT NULL,
+    decay_start_source TEXT DEFAULT 'question_open' NOT NULL, -- 'question_open' vs 'scheduled_start'
+    decay_min_points INTEGER DEFAULT 1 NOT NULL, -- Guaranteed floor points for correct answer after timer expires
     status quiz_status DEFAULT 'draft' NOT NULL,
     max_participants INTEGER DEFAULT 100, -- 100 for Free Plan, NULL for Plus Plan (unlimited)
     start_time TIMESTAMPTZ,

@@ -619,6 +619,8 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       base_points_per_question: quizData.base_points_per_question ?? 10,
       time_limit_per_question_sec: quizData.time_limit_per_question_sec ?? 15,
       total_time_limit_sec: quizData.total_time_limit_sec ?? null,
+      decay_start_source: quizData.decay_start_source || 'question_open',
+      decay_min_points: quizData.decay_min_points ?? 1,
       shuffle_questions: quizData.shuffle_questions ?? false,
       shuffle_options: quizData.shuffle_options ?? true,
       enable_referral_bonus: quizData.enable_referral_bonus ?? false,
@@ -925,6 +927,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
           timeLimitSec: effectiveLimit,
           timeTakenMs: ans.timeTakenMs,
           isCorrect: true,
+          decayMinPoints: targetRound?.decay_min_points ?? targetQuiz?.decay_min_points ?? 1,
         });
         calculatedScore += pts;
       }
@@ -959,6 +962,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
             timeLimitSec: effectiveLimit,
             timeTakenMs: ans.timeTakenMs,
             isCorrect: true,
+            decayMinPoints: targetRound?.decay_min_points ?? targetQuiz?.decay_min_points ?? 1,
           })
         : 0;
 
