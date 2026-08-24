@@ -1,0 +1,32 @@
+{
+  "name": "Quizee - Live Tournament & Quiz Arena",
+  "short_name": "Quizee",
+  "description": "Live multi-level quiz competitions, speed tournaments and assessment arena",
+  "start_url": "/",
+  "id": "/",
+  "display": "standalone",
+  "background_color": "#fffaf5",
+  "theme_color": "#e05a38",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

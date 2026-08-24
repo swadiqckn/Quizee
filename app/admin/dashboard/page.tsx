@@ -21,6 +21,8 @@ import {
   CreditCard,
   AlertCircle,
   Building2,
+  Share2,
+  Check,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { formatDate } from '@/lib/utils';
@@ -28,6 +30,7 @@ import { PLAN_CONFIG, PlanType } from '@/lib/types';
 
 export default function AdminDashboardPage() {
   const { quizzes, entries, referrals, activeOrg, currentUser, canCreateQuiz } = useQuizPlatform();
+  const [copiedQuizId, setCopiedQuizId] = React.useState<string | null>(null);
 
   // Show only quizzes created by this admin (unless superadmin)
   const isSuperadmin = currentUser?.role === 'superadmin';
@@ -50,6 +53,29 @@ export default function AdminDashboardPage() {
 
   const currentPlan: PlanType = activeOrg?.plan || 'free';
   const quota = canCreateQuiz();
+
+  const handleShareQuiz = async (quiz: any) => {
+    if (typeof window === 'undefined') return;
+    // Direct public link without any referral code
+    const directUrl = `${window.location.origin}/${quiz.slug || quiz.id}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: quiz.title,
+          text: quiz.description || `Join ${quiz.title}`,
+          url: directUrl,
+        });
+        return;
+      } catch (err) {}
+    }
+
+    try {
+      await navigator.clipboard.writeText(directUrl);
+      setCopiedQuizId(quiz.id);
+      setTimeout(() => setCopiedQuizId(null), 2500);
+    } catch (e) {}
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
@@ -274,6 +300,29 @@ export default function AdminDashboardPage() {
                     <Eye className="w-3.5 h-3.5 text-amber-600" />
                     Live Monitor
                   </Link>
+
+                  <button
+                    type="button"
+                    onClick={() => handleShareQuiz(quiz)}
+                    className={`px-3.5 py-2.5 rounded-2xl border text-xs font-bold transition flex items-center gap-1.5 shadow-sm ${
+                      copiedQuizId === quiz.id
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                        : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 hover:text-[#e05a38]'
+                    }`}
+                    title="Share direct competition link without referral code"
+                  >
+                    {copiedQuizId === quiz.id ? (
+                      <>
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Link Copied!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Share2 className="w-3.5 h-3.5 text-[#e05a38]" />
+                        <span>Share</span>
+                      </>
+                    )}
+                  </button>
 
                   <Link
                     href={`/${quiz.slug || quiz.id}`}

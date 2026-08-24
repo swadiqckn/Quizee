@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="terracottaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f06a48"/>
+      <stop offset="100%" stop-color="#c84a29"/>
+    </linearGradient>
+    <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="16" stdDeviation="20" flood-color="#c84a29" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  
+  <!-- Background Rounded App Tile -->
+  <rect x="32" y="32" width="448" height="448" rx="112" fill="url(#terracottaGrad)" filter="url(#dropShadow)"/>
+  
+  <!-- Inner White Card Border Glow -->
+  <rect x="36" y="36" width="440" height="440" rx="108" fill="none" stroke="#ffffff" stroke-width="4" stroke-opacity="0.25"/>
+
+  <!-- Stylized "Q" Lettermark -->
+  <circle cx="256" cy="240" r="110" fill="none" stroke="#ffffff" stroke-width="36" stroke-linecap="round"/>
+  <path d="M290 274 L370 354" fill="none" stroke="#ffffff" stroke-width="36" stroke-linecap="round"/>
+  
+  <!-- Little Accent Sparkle -->
+  <path d="M370 140 Q390 140 390 120 Q390 140 410 140 Q390 140 390 160 Q390 140 370 140 Z" fill="#ffd5c4"/>
+</svg>

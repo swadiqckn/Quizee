@@ -177,6 +177,30 @@ export function QuizMicrosite({
         : `${window.location.origin}/${slug}`)
     : `https://quizee.com/${slug}`;
 
+  // Clean direct competition URL without any referral code
+  const directShareUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/${slug}`
+    : `https://quizee.com/${slug}`;
+
+  const [copiedDirectLink, setCopiedDirectLink] = useState(false);
+
+  const handleCopyDirectLink = async () => {
+    if (typeof window === 'undefined') return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: quiz.title,
+          text: quiz.description || `Join ${quiz.title}`,
+          url: directShareUrl,
+        });
+        return;
+      } catch (e) {}
+    }
+    navigator.clipboard.writeText(directShareUrl);
+    setCopiedDirectLink(true);
+    setTimeout(() => setCopiedDirectLink(false), 2500);
+  };
+
   const handleCopyLink = () => {
     if (typeof window === 'undefined') return;
     navigator.clipboard.writeText(shareUrl);
@@ -337,12 +361,36 @@ export function QuizMicrosite({
                 </span>
               </div>
 
-              {quiz.organisation && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-2xl bg-white border border-[#ebdcd1] text-[11px] font-bold text-slate-700 shadow-sm">
-                  <Building2 className="w-3 h-3 text-[#e05a38]" />
-                  <span>Hosted by <strong>{quiz.organisation.name}</strong></span>
-                </div>
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {quiz.organisation && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-2xl bg-white border border-[#ebdcd1] text-[11px] font-bold text-slate-700 shadow-sm">
+                    <Building2 className="w-3 h-3 text-[#e05a38]" />
+                    <span>Hosted by <strong>{quiz.organisation.name}</strong></span>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleCopyDirectLink}
+                  className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-2xl border text-[11px] font-bold shadow-sm transition ${
+                    copiedDirectLink
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                      : 'bg-white hover:bg-slate-50 text-slate-700 border-[#ebdcd1] hover:text-[#e05a38]'
+                  }`}
+                  title="Share or copy direct link without referral code"
+                >
+                  {copiedDirectLink ? (
+                    <>
+                      <Check className="w-3 h-3 text-emerald-600" />
+                      <span>Link Copied!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="w-3 h-3 text-[#e05a38]" />
+                      <span>Share</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
 
             {/* Event Title & Description */}

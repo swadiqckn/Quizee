@@ -8,6 +8,15 @@
   --primary-terracotta: #e05a38;
 }
 
+html {
+  /* Prevent pinch-to-zoom and double-tap zoom across all mobile browsers */
+  touch-action: pan-x pan-y;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
 body {
   color: #18181b;
   background-color: #fffaf5;
@@ -17,6 +26,23 @@ body {
   background-size: 36px 36px;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   min-height: 100vh;
+  /* Prevent pull-to-refresh reload bouncing for native app look and feel */
+  overscroll-behavior-y: none;
+  touch-action: pan-x pan-y;
+}
+
+/* App-like user interaction: disable selection on general UI but allow in form fields */
+button, a, [role="button"] {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
+input, textarea, [contenteditable="true"] {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  touch-action: auto !important;
 }
 
 ::selection {
@@ -26,8 +52,8 @@ body {
 
 /* Custom scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
