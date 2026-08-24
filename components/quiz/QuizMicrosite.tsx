@@ -220,12 +220,29 @@ export function QuizMicrosite({
     window.open(`https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${text}`, '_blank');
   };
 
-  // Leaderboard entries
-  const quizEntries = entries
-    .filter((e) => e.quiz_id === quiz.id)
+  // Leaderboard entries: Dedup by user so each participant has ONLY one row max (latest/best score)
+  const userLatestEntriesMap = new Map<string, Entry>();
+  entries
+    .filter((e) => e.quiz_id === quiz.id && (e.status === 'submitted' || e.status === 'flagged_for_cheating'))
+    .forEach((e) => {
+      const existing = userLatestEntriesMap.get(e.user_id);
+      if (!existing) {
+        userLatestEntriesMap.set(e.user_id, e);
+      } else {
+        if (
+          e.score > existing.score ||
+          (e.score === existing.score && e.total_time_taken_ms < existing.total_time_taken_ms) ||
+          new Date(e.completed_at || 0).getTime() > new Date(existing.completed_at || 0).getTime()
+        ) {
+          userLatestEntriesMap.set(e.user_id, e);
+        }
+      }
+    });
+
+  const quizEntries = Array.from(userLatestEntriesMap.values())
     .sort((a, b) => b.score - a.score || a.total_time_taken_ms - b.total_time_taken_ms);
 
-  const myRank = userEntry ? quizEntries.findIndex((e) => e.id === userEntry.id) + 1 : null;
+  const myRank = userEntry ? quizEntries.findIndex((e) => e.id === userEntry.id || e.user_id === userEntry.user_id) + 1 : null;
 
   return (
     <div className="min-h-screen bg-[#fffaf5] text-slate-900 pb-28 sm:pb-16 selection:bg-[#e05a38]/20 selection:text-[#e05a38]">

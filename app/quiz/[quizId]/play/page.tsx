@@ -106,8 +106,15 @@ function QuizPlayContent() {
   }, [quizId, roundId]);
 
   const currentQuestion = activeQuestions[currentIndex];
-  const rawQTime = currentQuestion?.time_limit_sec !== undefined ? currentQuestion.time_limit_sec : quiz?.time_limit_per_question_sec;
-  const hasTimeLimit = rawQTime !== undefined && rawQTime !== null && rawQTime > 0;
+  // If the quiz itself has time_limit_per_question_sec = 0 (or null), the entire quiz has unlimited time per question
+  const isQuizUnlimited = quiz?.time_limit_per_question_sec === 0 || quiz?.time_limit_per_question_sec === null;
+  const rawQTime = isQuizUnlimited
+    ? 0
+    : (currentQuestion?.time_limit_sec !== undefined && currentQuestion?.time_limit_sec !== null
+        ? currentQuestion.time_limit_sec
+        : (quiz?.time_limit_per_question_sec ?? 0));
+
+  const hasTimeLimit = Boolean(rawQTime && rawQTime > 0);
   const questionLimitSec = hasTimeLimit ? rawQTime : 0;
   const basePoints = currentQuestion?.points || quiz?.base_points_per_question || 10;
 

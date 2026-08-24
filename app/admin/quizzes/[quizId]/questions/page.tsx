@@ -238,7 +238,7 @@ export default function ManageQuestionsPage() {
         const optD = optDIdx !== -1 ? row[optDIdx] || '' : '';
         const correctRaw = (correctIdx !== -1 ? row[correctIdx] : 'A').toUpperCase().trim();
         const pts = pointsIdx !== -1 && !isNaN(Number(row[pointsIdx])) ? Number(row[pointsIdx]) : (quiz.base_points_per_question || 10);
-        const timer = timerIdx !== -1 && !isNaN(Number(row[timerIdx])) ? Number(row[timerIdx]) : (quiz.time_limit_per_question_sec || 15);
+        const timer = timerIdx !== -1 && !isNaN(Number(row[timerIdx])) ? Number(row[timerIdx]) : (quiz.time_limit_per_question_sec ?? 0);
         const expl = expIdx !== -1 ? row[expIdx] || '' : '';
 
         // Build question options
@@ -397,6 +397,7 @@ export default function ManageQuestionsPage() {
     setQuestionText('');
     setAttachmentUrl('');
     setExplanation('');
+    setTimeLimitSec(quiz?.time_limit_per_question_sec ?? 0);
     setOptions([
       { id: 'opt-1', text: '', is_correct: true },
       { id: 'opt-2', text: '', is_correct: false },
@@ -413,7 +414,7 @@ export default function ManageQuestionsPage() {
     setAttachmentUrl(q.attachment_url || '');
     setAttachmentType(q.attachment_type || 'image');
     setPoints(q.points);
-    setTimeLimitSec(q.time_limit_sec || 15);
+    setTimeLimitSec(q.time_limit_sec !== undefined && q.time_limit_sec !== null ? q.time_limit_sec : (quiz?.time_limit_per_question_sec ?? 0));
     setExplanation(q.explanation || '');
     setOptions(q.options);
   };

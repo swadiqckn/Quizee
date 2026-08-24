@@ -889,24 +889,28 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     roundId: string | null;
     answers: Array<{ questionId: string; selectedOptionIds: string[]; timeTakenMs: number }>;
     status?: EntryStatus;
-    violationsCount?: number;
+        violationsCount?: number;
   }) => {
     const targetQuiz = quizzes.find((q) => q.id === quizId);
     const targetRound = rounds.find((r) => r.id === roundId);
 
-    // If retries are disallowed, check if user already submitted
-    if (targetQuiz && targetQuiz.allow_retries !== true && currentUser) {
-      const existing = entries.find(
-        (e) => e.quiz_id === quizId && e.user_id === currentUser.id && (e.status === 'submitted' || e.status === 'flagged_for_cheating')
+    const finalStatus: EntryStatus = status || 'submitted';
+    const userId = currentUser?.id;
+    let existingEntry: Entry | undefined;
+    if (userId) {
+      existingEntry = entries.find(
+        (e) => e.quiz_id === quizId && e.user_id === userId && (roundId ? e.round_id === roundId : true)
       );
-      if (existing) {
-        return {
-          entry: existing,
-          score: existing.score,
-          qualified: existing.qualified_for_next_round,
-          totalCorrect: existing.total_correct,
-        };
-      }
+    }
+
+    // If retries are disallowed, check if user already submitted
+    if (targetQuiz && targetQuiz.allow_retries !== true && existingEntry) {
+      return {
+        entry: existingEntry,
+        score: existingEntry.score,
+        qualified: existingEntry.qualified_for_next_round,
+        totalCorrect: existingEntry.total_correct,
+      };
     }
 
     const strategy: ScoringStrategy = targetQuiz?.scoring_strategy || 'fixed';
@@ -928,10 +932,17 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
 
       if (isCorrect) {
         totalCorrectCount += 1;
+        const isQuizUnlimited = targetQuiz?.time_limit_per_question_sec === 0 || targetQuiz?.time_limit_per_question_sec === null;
+        const effectiveLimit = isQuizUnlimited
+          ? 0
+          : (question.time_limit_sec !== undefined && question.time_limit_sec !== null
+              ? question.time_limit_sec
+              : (targetQuiz?.time_limit_per_question_sec ?? 0));
+
         const pts = calculateQuestionPoints({
           strategy,
           basePoints: question.points,
-          timeLimitSec: question.time_limit_sec || targetQuiz?.time_limit_per_question_sec || 15,
+          timeLimitSec: effectiveLimit,
           timeTakenMs: ans.timeTakenMs,
           isCorrect: true,
         });
@@ -954,11 +965,18 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         correctOptionIds.length === ans.selectedOptionIds.length &&
         correctOptionIds.every((id) => ans.selectedOptionIds.includes(id));
 
+      const isQuizUnlimited = targetQuiz?.time_limit_per_question_sec === 0 || targetQuiz?.time_limit_per_question_sec === null;
+      const effectiveLimit = isQuizUnlimited
+        ? 0
+        : (q?.time_limit_sec !== undefined && q?.time_limit_sec !== null
+            ? q.time_limit_sec
+            : (targetQuiz?.time_limit_per_question_sec ?? 0));
+
       const pts = isCorrect
         ? calculateQuestionPoints({
             strategy,
             basePoints: q ? q.points : 10,
-            timeLimitSec: q?.time_limit_sec || targetQuiz?.time_limit_per_question_sec || 15,
+            timeLimitSec: effectiveLimit,
             timeTakenMs: ans.timeTakenMs,
             isCorrect: true,
           })
@@ -978,7 +996,79 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       };
     });
 
-    const finalStatus: EntryStatus = status || 'submitted';
+    let finalEntry: Entry;
+
+    if (existingEntry) {
+      // RETRY / UPDATE: Update the existing database row so participant has max 1 row per quiz
+      const updatePayload = {
+        score: calculatedScore,
+        total_correct: totalCorrectCount,
+        total_time_taken_ms: totalTimeTaken,
+        qualified_for_next_round: finalStatus === 'flagged_for_cheating' ? false : isQualified,
+        status: finalStatus,
+        violations_count: violationsCount || 0,
+        started_at: new Date(Date.now() - totalTimeTaken).toISOString(),
+        completed_at: new Date().toISOString(),
+      };
+
+      try {
+        const { data: dbEntry, error } = await supabase
+          .from('entries')
+          .update(updatePayload)
+          .eq('id', existingEntry.id)
+          .select('*, user:users(*), quiz:quizzes(*), round:tournament_rounds(*)')
+          .single();
+
+        if (!error && dbEntry) {
+          finalEntry = {
+            ...dbEntry,
+            answers_breakdown: answersBreakdown,
+          };
+        } else {
+          finalEntry = {
+            ...existingEntry,
+            ...updatePayload,
+            answers_breakdown: answersBreakdown,
+          };
+        }
+      } catch (e) {
+        finalEntry = {
+          ...existingEntry,
+          ...updatePayload,
+          answers_breakdown: answersBreakdown,
+        };
+      }
+
+      try {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`quizee_breakdown_${finalEntry.id}`, JSON.stringify(answersBreakdown));
+        }
+      } catch (e) {}
+
+      // Update the existing row in client state
+      setEntries((prev) => prev.map((item) => (item.id === existingEntry!.id ? finalEntry : item)));
+
+      if (currentUser) {
+        const scoreDiff = calculatedScore - existingEntry.score;
+        setCurrentUser((prev) =>
+          prev
+            ? {
+                ...prev,
+                total_points: prev.total_points + scoreDiff,
+              }
+            : null
+        );
+      }
+
+      return {
+        entry: finalEntry,
+        score: calculatedScore,
+        qualified: finalEntry.qualified_for_next_round,
+        totalCorrect: totalCorrectCount,
+      };
+    }
+
+    // FIRST ATTEMPT: Insert new entry row
     const entryPayload = {
       quiz_id: quizId,
       round_id: roundId,
@@ -993,8 +1083,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       completed_at: new Date().toISOString(),
     };
 
-    let newEntry: Entry;
-
     try {
       const { data: dbEntry, error } = await supabase
         .from('entries')
@@ -1003,12 +1091,12 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         .single();
 
       if (!error && dbEntry) {
-        newEntry = {
+        finalEntry = {
           ...dbEntry,
           answers_breakdown: answersBreakdown,
         };
       } else {
-        newEntry = {
+        finalEntry = {
           id: generateUUID(),
           ...entryPayload,
           user: currentUser || undefined,
@@ -1018,7 +1106,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         };
       }
     } catch (e) {
-      newEntry = {
+      finalEntry = {
         id: generateUUID(),
         ...entryPayload,
         user: currentUser || undefined,
@@ -1030,23 +1118,27 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
 
     try {
       if (typeof window !== 'undefined') {
-        localStorage.setItem(`quizee_breakdown_${newEntry.id}`, JSON.stringify(answersBreakdown));
+        localStorage.setItem(`quizee_breakdown_${finalEntry.id}`, JSON.stringify(answersBreakdown));
       }
     } catch (e) {}
 
-    setEntries((prev) => [newEntry, ...prev]);
+    setEntries((prev) => [finalEntry, ...prev]);
 
     if (currentUser) {
-      setCurrentUser((prev) => prev ? ({
-        ...prev,
-        total_points: prev.total_points + calculatedScore,
-      }) : null);
+      setCurrentUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              total_points: prev.total_points + calculatedScore,
+            }
+          : null
+      );
     }
 
     return {
-      entry: newEntry,
+      entry: finalEntry,
       score: calculatedScore,
-      qualified: isQualified,
+      qualified: finalEntry.qualified_for_next_round,
       totalCorrect: totalCorrectCount,
     };
   };

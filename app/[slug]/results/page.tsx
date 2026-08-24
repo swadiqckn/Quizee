@@ -29,7 +29,7 @@ import { useQuizPlatform } from '@/lib/context';
 import { formatTimeMs, formatDate } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { matchQuizBySlugOrId } from '@/lib/slug';
-import { AnswerReviewItem } from '@/lib/types';
+import { AnswerReviewItem, Entry } from '@/lib/types';
 
 function SlugQuizResultsContent() {
   const params = useParams();
@@ -168,12 +168,30 @@ function SlugQuizResultsContent() {
     );
   }
 
-  // Calculate leaderboard for this round
-  const roundEntries = entries
-    .filter((e) => e.quiz_id === quiz.id && (round ? e.round_id === round.id : true))
+  // Calculate leaderboard for this round (Deduplicated so each participant has max 1 row)
+  const userRoundEntriesMap = new Map<string, Entry>();
+  entries
+    .filter((e) => e.quiz_id === quiz.id && (round ? e.round_id === round.id : true) && (e.status === 'submitted' || e.status === 'flagged_for_cheating'))
+    .forEach((e) => {
+      const existing = userRoundEntriesMap.get(e.user_id);
+      if (!existing) {
+        userRoundEntriesMap.set(e.user_id, e);
+      } else {
+        if (
+          e.id === entry.id ||
+          e.score > existing.score ||
+          (e.score === existing.score && e.total_time_taken_ms < existing.total_time_taken_ms) ||
+          new Date(e.completed_at || 0).getTime() > new Date(existing.completed_at || 0).getTime()
+        ) {
+          userRoundEntriesMap.set(e.user_id, e);
+        }
+      }
+    });
+
+  const roundEntries = Array.from(userRoundEntriesMap.values())
     .sort((a, b) => b.score - a.score || a.total_time_taken_ms - b.total_time_taken_ms);
 
-  const userRank = roundEntries.findIndex((e) => e.id === entry.id) + 1;
+  const userRank = roundEntries.findIndex((e) => e.id === entry.id || e.user_id === entry.user_id) + 1;
 
   // Determine if Retry is permitted by organizer
   const allowTryAgain = quiz.allow_retries === true;
