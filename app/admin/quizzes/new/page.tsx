@@ -559,15 +559,68 @@ export default function NewQuizPage() {
             </div>
 
             <div>
-              <label className="text-xs font-bold text-slate-700 block mb-1.5">
-                Question Time Limit (seconds)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-bold text-slate-700">
+                  Question Time Limit (seconds)
+                </label>
+                <span className="text-[10px] font-bold text-slate-500">
+                  {timeLimitSec === 0 ? '∞ Unlimited (No constraint)' : `${timeLimitSec}s per question`}
+                </span>
+              </div>
               <input
                 type="number"
+                min="0"
+                placeholder="0 for Unlimited"
                 value={timeLimitSec}
-                onChange={(e) => setTimeLimitSec(Number(e.target.value))}
+                onChange={(e) => setTimeLimitSec(Math.max(0, Number(e.target.value)))}
                 className="w-full px-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
               />
+              <div className="flex items-center gap-1.5 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setTimeLimitSec(0)}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition ${
+                    timeLimitSec === 0
+                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  ∞ No Limit (0s)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimeLimitSec(15)}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition ${
+                    timeLimitSec === 15
+                      ? 'bg-[#ffebe3] text-[#c2411d] border border-[#fcd5c7]'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  15s
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimeLimitSec(30)}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition ${
+                    timeLimitSec === 30
+                      ? 'bg-[#ffebe3] text-[#c2411d] border border-[#fcd5c7]'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  30s
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTimeLimitSec(60)}
+                  className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition ${
+                    timeLimitSec === 60
+                      ? 'bg-[#ffebe3] text-[#c2411d] border border-[#fcd5c7]'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  60s
+                </button>
+              </div>
             </div>
           </div>
         </div>

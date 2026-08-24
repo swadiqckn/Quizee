@@ -58,7 +58,26 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Protect all /admin routes: only users with role = 'admin' or 'superadmin' allowed, otherwise redirect to /explore
+  if (request.nextUrl.pathname.startsWith('/admin')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/explore', request.url));
+    }
+
+    const { data: profile } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (!profile || (profile.role !== 'admin' && profile.role !== 'superadmin')) {
+      return NextResponse.redirect(new URL('/explore', request.url));
+    }
+  }
 
   return response;
 }

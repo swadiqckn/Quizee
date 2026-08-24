@@ -46,6 +46,8 @@ export default function SuperadminPage() {
       name: orgName.trim(),
       slug: orgSlug.trim().toLowerCase().replace(/\s+/g, '-'),
       logo_url: null,
+      allow_public_registration: true,
+      primary_color: primaryColor,
       plan: 'free',
       quizzes_created_this_month: 0,
       settings: {

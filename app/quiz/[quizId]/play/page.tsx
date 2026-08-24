@@ -102,20 +102,31 @@ function QuizPlayContent() {
   }, [quizId, roundId]);
 
   const currentQuestion = activeQuestions[currentIndex];
-  const questionLimitSec = currentQuestion?.time_limit_sec || quiz?.time_limit_per_question_sec || 15;
+  const rawQTime = currentQuestion?.time_limit_sec !== undefined ? currentQuestion.time_limit_sec : quiz?.time_limit_per_question_sec;
+  const hasTimeLimit = rawQTime !== undefined && rawQTime !== null && rawQTime > 0;
+  const questionLimitSec = hasTimeLimit ? rawQTime : 0;
   const basePoints = currentQuestion?.points || quiz?.base_points_per_question || 10;
 
   // Reset timer on question change
   useEffect(() => {
     if (!currentQuestion || !currentUser) return;
     setQuestionStartTime(Date.now());
+    if (!hasTimeLimit) {
+      setTimeRemaining(0);
+      setCurrentPointsPotential(basePoints);
+      return;
+    }
     setTimeRemaining(questionLimitSec);
     setCurrentPointsPotential(basePoints);
-  }, [currentIndex, currentQuestion?.id, currentUser]);
+  }, [currentIndex, currentQuestion?.id, currentUser, hasTimeLimit, questionLimitSec, basePoints]);
 
   // Real-time ticking & dynamic time-decay scoring calculation
   useEffect(() => {
     if (!currentQuestion || isSubmitting || !currentUser) return;
+    if (!hasTimeLimit) {
+      setCurrentPointsPotential(basePoints);
+      return;
+    }
 
     const interval = setInterval(() => {
       const elapsedMs = Date.now() - questionStartTime;
@@ -139,7 +150,7 @@ function QuizPlayContent() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [currentIndex, currentQuestion, isSubmitting, currentUser]);
+  }, [currentIndex, currentQuestion, isSubmitting, currentUser, hasTimeLimit, questionLimitSec, basePoints]);
 
   const handleSelectOption = (optionId: string) => {
     if (!currentQuestion) return;
@@ -152,7 +163,7 @@ function QuizPlayContent() {
   const handleNextQuestion = () => {
     if (!currentQuestion || isSubmitting) return;
 
-    const timeTakenMs = Math.min(Date.now() - questionStartTime, questionLimitSec * 1000);
+    const timeTakenMs = hasTimeLimit ? Math.min(Date.now() - questionStartTime, questionLimitSec * 1000) : Date.now() - questionStartTime;
     const chosenOptions = selectedAnswers[currentQuestion.id] || [];
 
     const updatedLog = [
@@ -445,16 +456,23 @@ function QuizPlayContent() {
             </div>
           </div>
 
-          <div
-            className={`px-3.5 py-1.5 rounded-2xl border flex items-center gap-2 transition-colors ${
-              timeRemaining <= 5
-                ? 'bg-rose-50 border-rose-400 text-rose-600 animate-pulse'
-                : 'bg-slate-50 border-slate-200 text-slate-800'
-            }`}
-          >
-            <Clock className="w-4 h-4 text-[#e05a38]" />
-            <span className="text-sm font-bold font-mono">{timeRemaining}s</span>
-          </div>
+          {hasTimeLimit ? (
+            <div
+              className={`px-3.5 py-1.5 rounded-2xl border flex items-center gap-2 transition-colors ${
+                timeRemaining <= 5
+                  ? 'bg-rose-50 border-rose-400 text-rose-600 animate-pulse'
+                  : 'bg-slate-50 border-slate-200 text-slate-800'
+              }`}
+            >
+              <Clock className="w-4 h-4 text-[#e05a38]" />
+              <span className="text-sm font-bold font-mono">{timeRemaining}s</span>
+            </div>
+          ) : (
+            <div className="px-3.5 py-1.5 rounded-2xl border bg-slate-50 border-slate-200 text-slate-700 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-slate-500" />
+              <span className="text-xs font-bold font-mono">∞ Unlimited Time</span>
+            </div>
+          )}
         </div>
       </div>
 

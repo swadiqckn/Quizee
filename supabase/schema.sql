@@ -68,6 +68,8 @@ CREATE TABLE IF NOT EXISTS public.organisations (
     slug TEXT NOT NULL UNIQUE,
     logo_url TEXT,
     owner_id UUID, -- References users(id)
+    allow_public_registration BOOLEAN DEFAULT TRUE NOT NULL,
+    primary_color TEXT DEFAULT '#6366f1',
     plan plan_type DEFAULT 'free' NOT NULL, -- 'free' (max 100 participants, 2 quizzes/mo) vs 'plus' (unlimited)
     quizzes_created_this_month INTEGER DEFAULT 0 NOT NULL,
     settings JSONB DEFAULT '{"primary_color": "#6366f1", "allow_public_registration": true}'::jsonb,

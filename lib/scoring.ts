@@ -25,12 +25,12 @@ export function calculateQuestionPoints({
   if (!isCorrect) return 0;
   if (basePoints <= 0) return 0;
 
-  if (strategy === 'fixed') {
+  if (strategy === 'fixed' || timeLimitSec <= 0) {
     return basePoints;
   }
 
   // Time decay mode
-  const effectiveLimit = timeLimitSec > 0 ? timeLimitSec : 15;
+  const effectiveLimit = timeLimitSec;
   const timeTakenSec = Math.min(Math.max(0, timeTakenMs / 1000), effectiveLimit);
   
   // Linear decay formula

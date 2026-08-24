@@ -117,16 +117,25 @@ function SlugQuizPlayContent() {
   }, [quiz?.id, roundId, rawQuestions.length]);
 
   const currentQ = activeQuestions[currentIndex];
-  const maxQTime = currentQ?.time_limit_sec || quiz?.time_limit_per_question_sec || 15;
+  const rawQTime = currentQ?.time_limit_sec !== undefined ? currentQ.time_limit_sec : quiz?.time_limit_per_question_sec;
+  const hasTimeLimit = rawQTime !== undefined && rawQTime !== null && rawQTime > 0;
+  const maxQTime = hasTimeLimit ? rawQTime : 0;
   const baseQPts = currentQ?.points || quiz?.base_points_per_question || 10;
 
   // Real-Time Countdown & Point Decay Engine
   useEffect(() => {
     if (!currentQ || isSubmitting) return;
 
+    setQuestionStartTime(Date.now());
+
+    if (!hasTimeLimit) {
+      setTimeRemaining(0);
+      setCurrentPointsPotential(baseQPts);
+      return;
+    }
+
     setTimeRemaining(maxQTime);
     setCurrentPointsPotential(baseQPts);
-    setQuestionStartTime(Date.now());
 
     const interval = setInterval(() => {
       const elapsedMs = Date.now() - questionStartTime;
@@ -149,7 +158,7 @@ function SlugQuizPlayContent() {
     }, 100);
 
     return () => clearInterval(interval);
-  }, [currentIndex, currentQ?.id, maxQTime, baseQPts, isSubmitting]);
+  }, [currentIndex, currentQ?.id, maxQTime, baseQPts, isSubmitting, hasTimeLimit]);
 
   const handleSelectOption = (optionId: string) => {
     if (!currentQ) return;
@@ -162,7 +171,7 @@ function SlugQuizPlayContent() {
   const handleNextQuestion = async (isAutoExpire = false) => {
     if (!currentQ || isSubmitting || !quiz) return;
 
-    const timeTakenMs = Math.min(maxQTime * 1000, Date.now() - questionStartTime);
+    const timeTakenMs = hasTimeLimit ? Math.min(maxQTime * 1000, Date.now() - questionStartTime) : Date.now() - questionStartTime;
     const chosenOptions = selectedAnswers[currentQ.id] || [];
 
     const newLogItem = {
@@ -448,28 +457,36 @@ function SlugQuizPlayContent() {
           <span className="text-sm font-bold text-[#e05a38] font-mono">+{currentPointsPotential} pts</span>
         </div>
 
-        {/* Right: Real-time Countdown Timer */}
+        {/* Right: Real-time Countdown Timer or Unlimited Badge */}
         <div className="flex items-center gap-2.5">
-          <Clock className={`w-5 h-5 ${timeRemaining <= 5 ? 'text-rose-500 animate-bounce' : 'text-[#e05a38]'}`} />
-          <span
-            className={`text-lg font-bold font-mono ${
-              timeRemaining <= 5 ? 'text-rose-600 font-bold' : 'text-slate-900'
-            }`}
-          >
-            {timeRemaining.toFixed(1)}s
-          </span>
+          <Clock className={`w-5 h-5 ${hasTimeLimit && timeRemaining <= 5 ? 'text-rose-500 animate-bounce' : 'text-[#e05a38]'}`} />
+          {hasTimeLimit ? (
+            <span
+              className={`text-lg font-bold font-mono ${
+                timeRemaining <= 5 ? 'text-rose-600 font-bold' : 'text-slate-900'
+              }`}
+            >
+              {timeRemaining.toFixed(1)}s
+            </span>
+          ) : (
+            <span className="text-xs font-bold text-slate-700 font-mono bg-slate-100 px-2.5 py-1 rounded-xl">
+              ∞ Unlimited Time
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Timer Progress Bar */}
-      <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
-        <div
-          className={`h-full transition-all duration-100 ${
-            timeRemaining <= 5 ? 'bg-rose-500' : 'bg-[#e05a38]'
-          }`}
-          style={{ width: `${timerPercentage}%` }}
-        />
-      </div>
+      {/* Timer Progress Bar (Only when time limit is active) */}
+      {hasTimeLimit && (
+        <div className="w-full h-2 rounded-full bg-slate-200 overflow-hidden">
+          <div
+            className={`h-full transition-all duration-100 ${
+              timeRemaining <= 5 ? 'bg-rose-500' : 'bg-[#e05a38]'
+            }`}
+            style={{ width: `${timerPercentage}%` }}
+          />
+        </div>
+      )}
 
       {/* Question Card */}
       <div className="p-8 sm:p-10 rounded-3xl bg-white border border-[#ebdcd1] shadow-xl space-y-6">

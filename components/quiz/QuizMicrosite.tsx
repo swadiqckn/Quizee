@@ -413,7 +413,11 @@ export function QuizMicrosite({
                 </div>
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Time / Q</p>
-                  <p className="text-xs font-bold text-slate-900">{quiz.time_limit_per_question_sec}s</p>
+                  <p className="text-xs font-bold text-slate-900">
+                    {quiz.time_limit_per_question_sec && quiz.time_limit_per_question_sec > 0
+                      ? `${quiz.time_limit_per_question_sec}s`
+                      : '∞ Unlimited'}
+                  </p>
                 </div>
               </div>
 

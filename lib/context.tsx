@@ -194,6 +194,8 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
               name: `${activeUserProfile.full_name || username}'s Workspace`,
               slug: `${orgSlug}-${Date.now().toString(36).slice(-4)}`,
               owner_id: activeUserProfile.id,
+              allow_public_registration: true,
+              primary_color: '#6366f1',
               plan: 'free',
               quizzes_created_this_month: 0,
             })
@@ -245,6 +247,8 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
           .insert({
             name: 'Primary Workspace',
             slug: 'main',
+            allow_public_registration: true,
+            primary_color: '#6366f1',
             plan: 'free',
             quizzes_created_this_month: 0,
           })
@@ -561,6 +565,8 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
           slug: `${orgSlug}-${Date.now().toString(36).slice(-4)}`,
           logo_url: data.logo_url?.trim() || null,
           owner_id: currentUser.id,
+          allow_public_registration: true,
+          primary_color: '#6366f1',
           plan: 'free',
           quizzes_created_this_month: 0,
         })

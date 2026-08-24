@@ -53,9 +53,11 @@ export interface Organisation {
   slug: string;
   logo_url: string | null;
   owner_id?: string | null;
+  allow_public_registration?: boolean;
+  primary_color?: string | null;
   plan: PlanType;
   quizzes_created_this_month: number;
-  settings: {
+  settings?: {
     primary_color?: string;
     allow_public_registration?: boolean;
     banner_url?: string;
