@@ -24,7 +24,11 @@ import { Question, QuestionOption } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
 import { formatDate } from '@/lib/utils';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
-import { AntiCheatWarningModal, AntiCheatStatusBadge } from '@/components/quiz/AntiCheatWarningModal';
+import {
+  AntiCheatWarningModal,
+  AntiCheatStatusBadge,
+  AntiCheatFullscreenGate,
+} from '@/components/quiz/AntiCheatWarningModal';
 
 function QuizPlayContent() {
   const params = useParams();
@@ -437,6 +441,7 @@ function QuizPlayContent() {
               enabled={quiz.anti_cheat_enabled}
               violationCount={antiCheat.violationCount}
               maxViolations={antiCheat.maxViolations}
+              isFullscreen={antiCheat.isFullscreen}
             />
           </div>
           <h1 className="text-sm font-bold text-slate-900">
@@ -550,6 +555,18 @@ function QuizPlayContent() {
         </div>
       </div>
 
+      {/* Fullscreen Gate when anti-cheat enabled & not fullscreen yet */}
+      {quiz.anti_cheat_enabled && !antiCheat.isFullscreen && !antiCheat.isFlagged && (
+        <AntiCheatFullscreenGate
+          quizTitle={quiz.title}
+          maxViolations={quiz.max_violations || 3}
+          onEnterFullscreen={async () => {
+            await antiCheat.enterFullscreen();
+            setQuestionStartTime(Date.now());
+          }}
+        />
+      )}
+
       {/* Anti-Cheat Warning Modal */}
       <AntiCheatWarningModal
         isOpen={antiCheat.isWarningModalOpen}
@@ -557,6 +574,11 @@ function QuizPlayContent() {
         violationCount={antiCheat.violationCount}
         maxViolations={antiCheat.maxViolations}
         isFlagged={antiCheat.isFlagged}
+        isFullscreen={antiCheat.isFullscreen}
+        onReEnterFullscreen={async () => {
+          await antiCheat.enterFullscreen();
+          setQuestionStartTime(Date.now());
+        }}
         onDismiss={antiCheat.dismissWarning}
       />
     </div>

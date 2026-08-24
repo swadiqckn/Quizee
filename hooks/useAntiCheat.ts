@@ -7,7 +7,8 @@ export type ViolationType =
   | 'window_blur'
   | 'copy_paste_attempt'
   | 'context_menu'
-  | 'dev_tools_shortcut';
+  | 'dev_tools_shortcut'
+  | 'fullscreen_exit';
 
 export interface AntiCheatViolation {
   id: string;
@@ -43,6 +44,10 @@ export interface UseAntiCheatReturn {
   lastViolation: AntiCheatViolation | null;
   isWarningModalOpen: boolean;
   dismissWarning: () => void;
+  /** Fullscreen state and actions */
+  isFullscreen: boolean;
+  isFullScreenSupported: boolean;
+  enterFullscreen: () => Promise<boolean>;
   /** Props and styles to apply on the quiz runner container for content copy protection */
   containerProps: {
     onContextMenu: (e: React.MouseEvent) => void;
@@ -70,6 +75,37 @@ export function useAntiCheat({
   const [isWarningModalOpen, setIsWarningModalOpen] = useState<boolean>(false);
   const [isFlagged, setIsFlagged] = useState<boolean>(false);
 
+  // Fullscreen state
+  const checkIsFullscreen = (): boolean => {
+    if (typeof document === 'undefined') return false;
+    return Boolean(
+      document.fullscreenElement ||
+      (document as any).webkitFullscreenElement ||
+      (document as any).mozFullScreenElement ||
+      (document as any).msFullscreenElement
+    );
+  };
+
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isFullScreenSupported, setIsFullScreenSupported] = useState<boolean>(true);
+  const hasEnteredFullscreenRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const isSupported = Boolean(
+      document.fullscreenEnabled ||
+      (document as any).webkitFullscreenEnabled ||
+      (document as any).mozFullScreenEnabled ||
+      (document as any).msFullscreenEnabled
+    );
+    setIsFullScreenSupported(isSupported);
+    const inFull = checkIsFullscreen();
+    setIsFullscreen(inFull);
+    if (inFull) {
+      hasEnteredFullscreenRef.current = true;
+    }
+  }, []);
+
   // Refs to maintain current values without triggering effect re-subscriptions
   const enabledRef = useRef(enabled);
   const isActiveRef = useRef(isActive);
@@ -95,6 +131,31 @@ export function useAntiCheat({
     onMaxViolationsReachedRef.current = onMaxViolationsReached;
     isFlaggedRef.current = isFlagged;
   }, [enabled, isActive, maxViolations, blurThresholdMs, debounceMs, onViolation, onMaxViolationsReached, isFlagged]);
+
+  /**
+   * Request full-screen mode helper
+   */
+  const enterFullscreen = useCallback(async (): Promise<boolean> => {
+    if (typeof document === 'undefined') return false;
+    try {
+      const elem = document.documentElement as any;
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        await elem.webkitRequestFullscreen();
+      } else if (elem.mozRequestFullScreen) {
+        await elem.mozRequestFullScreen();
+      } else if (elem.msRequestFullscreen) {
+        await elem.msRequestFullscreen();
+      }
+      setIsFullscreen(true);
+      hasEnteredFullscreenRef.current = true;
+      return true;
+    } catch (err) {
+      console.warn('Fullscreen request failed or was not allowed:', err);
+      return false;
+    }
+  }, []);
 
   /**
    * Internal violation handler with safety debouncing & threshold checks
@@ -144,6 +205,38 @@ export function useAntiCheat({
   const dismissWarning = useCallback(() => {
     setIsWarningModalOpen(false);
   }, []);
+
+  // 0. Fullscreen Mode Exit Detection
+  useEffect(() => {
+    if (!enabled || !isActive) return;
+
+    const handleFullscreenChange = () => {
+      const inFull = checkIsFullscreen();
+      setIsFullscreen(inFull);
+
+      if (inFull) {
+        hasEnteredFullscreenRef.current = true;
+      } else if (enabledRef.current && isActiveRef.current && hasEnteredFullscreenRef.current) {
+        // Participant was in full-screen and disabled or exited it!
+        triggerViolation(
+          'fullscreen_exit',
+          'Exiting full-screen mode is prohibited during proctored competitions.'
+        );
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, [enabled, isActive, triggerViolation]);
 
   // 1. Tab / App Switch Visibility Detection
   useEffect(() => {
@@ -314,6 +407,9 @@ export function useAntiCheat({
     lastViolation,
     isWarningModalOpen,
     dismissWarning,
+    isFullscreen,
+    isFullScreenSupported,
+    enterFullscreen,
     containerProps,
   };
 }

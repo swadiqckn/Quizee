@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ShieldAlert, AlertTriangle, ShieldCheck, Shield, Lock } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, ShieldCheck, Shield, Lock, Maximize2, Monitor } from 'lucide-react';
 import { AntiCheatViolation } from '@/hooks/useAntiCheat';
 
 interface AntiCheatWarningModalProps {
@@ -10,6 +10,8 @@ interface AntiCheatWarningModalProps {
   violationCount: number;
   maxViolations: number;
   isFlagged: boolean;
+  isFullscreen?: boolean;
+  onReEnterFullscreen?: () => Promise<unknown> | void;
   onDismiss: () => void;
 }
 
@@ -19,12 +21,21 @@ export function AntiCheatWarningModal({
   violationCount,
   maxViolations,
   isFlagged,
+  isFullscreen,
+  onReEnterFullscreen,
   onDismiss,
 }: AntiCheatWarningModalProps) {
   if (!isOpen && !isFlagged) return null;
 
   const remaining = Math.max(0, maxViolations - violationCount);
   const isFinalViolation = violationCount >= maxViolations || isFlagged;
+
+  const handleAcknowledge = async () => {
+    if (onReEnterFullscreen && !isFullscreen) {
+      await onReEnterFullscreen();
+    }
+    onDismiss();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-sm animate-in fade-in duration-200">
@@ -88,7 +99,7 @@ export function AntiCheatWarningModal({
           <p className="text-[11px] text-slate-500 mt-2 font-medium">
             {isFinalViolation
               ? 'Your quiz attempt is being submitted immediately and flagged for organizer review.'
-              : `Leaving this tab or switching windows will automatically submit your quiz when you reach ${maxViolations} violations.`}
+              : `Exiting full-screen or switching windows will automatically submit your quiz when you reach ${maxViolations} violations.`}
           </p>
         </div>
 
@@ -101,15 +112,90 @@ export function AntiCheatWarningModal({
             </div>
           ) : (
             <button
-              onClick={onDismiss}
+              onClick={handleAcknowledge}
               type="button"
               className="w-full py-3.5 px-4 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/25 transition hover:scale-[1.02] flex items-center justify-center gap-2"
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>I Understand & Return to Quiz</span>
+              {isFullscreen ? (
+                <>
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>I Understand & Continue Quiz</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-4 h-4" />
+                  <span>Re-enter Full-Screen & Continue</span>
+                </>
+              )}
             </button>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Fullscreen Gate Prompt before entering an active proctored quiz
+ */
+export function AntiCheatFullscreenGate({
+  quizTitle,
+  maxViolations,
+  onEnterFullscreen,
+}: {
+  quizTitle: string;
+  maxViolations: number;
+  onEnterFullscreen: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="w-full max-w-lg p-6 sm:p-8 rounded-3xl bg-white border border-[#ffd8cb] shadow-2xl space-y-6 text-center">
+        {/* Header Icon */}
+        <div className="w-16 h-16 rounded-2xl bg-[#fff0ea] border border-[#ffd8cb] text-[#e05a38] flex items-center justify-center mx-auto shadow-md">
+          <Monitor className="w-8 h-8" />
+        </div>
+
+        {/* Title */}
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-extrabold uppercase tracking-wider bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <Shield className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Anti-Cheat Proctoring Enabled</span>
+          </div>
+
+          <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+            Full-Screen Mode Required
+          </h2>
+
+          <p className="text-xs text-slate-600 leading-relaxed font-medium">
+            <strong>{quizTitle}</strong> is a proctored competition. You must enter and maintain full-screen mode for the duration of the quiz.
+          </p>
+        </div>
+
+        {/* Rules Checklist */}
+        <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left space-y-2.5 text-xs text-slate-700 font-medium">
+          <div className="flex items-center gap-2.5">
+            <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0">✓</span>
+            <span>Full-screen mode must remain active. Exiting full-screen records a violation.</span>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0">✓</span>
+            <span>Tab switching, window minimization, and mobile overlays are restricted.</span>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-[10px] shrink-0">✓</span>
+            <span>Maximum <strong>{maxViolations} violations</strong> allowed before automatic submission.</span>
+          </div>
+        </div>
+
+        {/* CTA Button */}
+        <button
+          onClick={onEnterFullscreen}
+          type="button"
+          className="w-full py-4 px-6 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs sm:text-sm shadow-xl shadow-[#e05a38]/30 transition hover:scale-[1.02] flex items-center justify-center gap-2"
+        >
+          <Maximize2 className="w-4 h-4" />
+          <span>Enter Full-Screen to Start Competition</span>
+        </button>
       </div>
     </div>
   );
@@ -122,10 +208,12 @@ export function AntiCheatStatusBadge({
   enabled,
   violationCount,
   maxViolations,
+  isFullscreen,
 }: {
   enabled?: boolean;
   violationCount: number;
   maxViolations: number;
+  isFullscreen?: boolean;
 }) {
   if (!enabled) return null;
 
@@ -149,7 +237,7 @@ export function AntiCheatStatusBadge({
         ></span>
       </div>
       <span className="text-[11px]">
-        {hasViolations ? `Violations: ${violationCount}/${maxViolations}` : 'Proctoring Active'}
+        {hasViolations ? `Violations: ${violationCount}/${maxViolations}` : isFullscreen ? 'Proctoring (Full Screen)' : 'Proctoring Active'}
       </span>
     </div>
   );

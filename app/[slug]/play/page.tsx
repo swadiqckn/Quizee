@@ -25,7 +25,11 @@ import { createClient } from '@/lib/supabase/client';
 import { matchQuizBySlugOrId } from '@/lib/slug';
 import { formatDate } from '@/lib/utils';
 import { useAntiCheat } from '@/hooks/useAntiCheat';
-import { AntiCheatWarningModal, AntiCheatStatusBadge } from '@/components/quiz/AntiCheatWarningModal';
+import {
+  AntiCheatWarningModal,
+  AntiCheatStatusBadge,
+  AntiCheatFullscreenGate,
+} from '@/components/quiz/AntiCheatWarningModal';
 
 function SlugQuizPlayContent() {
   const params = useParams();
@@ -442,6 +446,7 @@ function SlugQuizPlayContent() {
                 enabled={quiz.anti_cheat_enabled}
                 violationCount={antiCheat.violationCount}
                 maxViolations={antiCheat.maxViolations}
+                isFullscreen={antiCheat.isFullscreen}
               />
             </div>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
@@ -573,6 +578,18 @@ function SlugQuizPlayContent() {
         </div>
       </div>
 
+      {/* Fullscreen Gate when anti-cheat enabled & not fullscreen yet */}
+      {quiz.anti_cheat_enabled && !antiCheat.isFullscreen && !antiCheat.isFlagged && (
+        <AntiCheatFullscreenGate
+          quizTitle={quiz.title}
+          maxViolations={quiz.max_violations || 3}
+          onEnterFullscreen={async () => {
+            await antiCheat.enterFullscreen();
+            setQuestionStartTime(Date.now());
+          }}
+        />
+      )}
+
       {/* Anti-Cheat Warning Modal */}
       <AntiCheatWarningModal
         isOpen={antiCheat.isWarningModalOpen}
@@ -580,6 +597,11 @@ function SlugQuizPlayContent() {
         violationCount={antiCheat.violationCount}
         maxViolations={antiCheat.maxViolations}
         isFlagged={antiCheat.isFlagged}
+        isFullscreen={antiCheat.isFullscreen}
+        onReEnterFullscreen={async () => {
+          await antiCheat.enterFullscreen();
+          setQuestionStartTime(Date.now());
+        }}
         onDismiss={antiCheat.dismissWarning}
       />
     </div>
