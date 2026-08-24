@@ -50,7 +50,12 @@ function SlugQuizPlayContent() {
   const [isFetchingDirect, setIsFetchingDirect] = useState(false);
 
   const quiz = matchQuizBySlugOrId(quizzes, slug) || directQuiz;
-  const currentRound = roundId ? rounds.find((r) => r.id === roundId) : null;
+  const quizRounds = rounds.filter((r) => r.quiz_id === quiz?.id).sort((a, b) => a.round_number - b.round_number);
+  const currentRound = roundId
+    ? rounds.find((r) => r.id === roundId)
+    : (quiz?.quiz_type === 'tournament'
+        ? (rounds.find((r) => r.quiz_id === quiz?.id && r.status === 'active') || quizRounds[0] || null)
+        : null);
 
   React.useEffect(() => {
     if (!quiz && slug) {
@@ -89,6 +94,12 @@ function SlugQuizPlayContent() {
   // Filter questions for this quiz / round
   const rawQuestions = questions.filter((q) => {
     if (!quiz) return false;
+    if (quiz.quiz_type === 'tournament') {
+      const targetRoundId = roundId || currentRound?.id;
+      if (targetRoundId) {
+        return q.quiz_id === quiz.id && q.round_id === targetRoundId;
+      }
+    }
     if (roundId) return q.quiz_id === quiz.id && q.round_id === roundId;
     return q.quiz_id === quiz.id;
   });
@@ -304,13 +315,24 @@ function SlugQuizPlayContent() {
     );
   }
 
-  // Check if participant already completed this quiz and retries are disallowed
-  const existingCompletedEntry = entries.find(
-    (e) =>
-      e.quiz_id === quiz.id &&
-      (currentUser ? e.user_id === currentUser.id : false) &&
-      (e.status === 'submitted' || e.status === 'flagged_for_cheating')
-  );
+  // Check if participant already completed this specific quiz/round and retries are disallowed
+  const existingCompletedEntry = entries.find((e) => {
+    if (e.quiz_id !== quiz.id) return false;
+    if (!currentUser || e.user_id !== currentUser.id) return false;
+    if (e.status !== 'submitted' && e.status !== 'flagged_for_cheating') return false;
+
+    // For tournament quizzes: check if this specific round was completed
+    if (quiz.quiz_type === 'tournament') {
+      const targetRoundId = roundId || currentRound?.id;
+      if (targetRoundId) {
+        return e.round_id === targetRoundId;
+      }
+      return false;
+    }
+
+    // For single quizzes: match the whole quiz
+    return true;
+  });
 
   const disallowRetries = quiz.allow_retries !== true;
 
@@ -326,9 +348,11 @@ function SlugQuizPlayContent() {
             <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
               Single Attempt Only
             </span>
-            <h1 className="text-2xl font-bold text-slate-900">Attempt Already Completed</h1>
+            <h1 className="text-2xl font-bold text-slate-900">
+              {currentRound ? `${currentRound.title} Already Completed` : 'Attempt Already Completed'}
+            </h1>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              You have already completed <strong className="text-slate-900">{quiz.title}</strong>. This competition does not allow multiple attempts.
+              You have already completed <strong className="text-slate-900">{currentRound ? `${quiz.title} (${currentRound.title})` : quiz.title}</strong>. This {currentRound ? 'round' : 'competition'} does not allow multiple attempts.
             </p>
           </div>
 
@@ -362,6 +386,92 @@ function SlugQuizPlayContent() {
         </div>
       </div>
     );
+  }
+
+  // Check tournament progression & qualification for Round > 1
+  if (quiz.quiz_type === 'tournament' && currentRound && currentRound.round_number > 1 && currentUser) {
+    const prevRound = quizRounds.find((r) => r.round_number === currentRound.round_number - 1);
+    if (prevRound) {
+      const prevEntry = entries.find(
+        (e) =>
+          e.quiz_id === quiz.id &&
+          e.round_id === prevRound.id &&
+          e.user_id === currentUser.id &&
+          (e.status === 'submitted' || e.status === 'flagged_for_cheating')
+      );
+
+      if (!prevEntry) {
+        return (
+          <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
+            <div className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-white border border-[#ebdcd1] shadow-2xl space-y-6 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-sm">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-bold uppercase tracking-wider">
+                  Prerequisite Round Required
+                </span>
+                <h1 className="text-2xl font-bold text-slate-900">Complete Previous Round First</h1>
+                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                  You must complete <strong className="text-slate-900">{prevRound.title}</strong> before entering {currentRound.title}.
+                </p>
+              </div>
+              <div className="flex flex-col gap-2.5 pt-2">
+                <Link
+                  href={`/${slug}/play?roundId=${prevRound.id}`}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/25 transition flex items-center justify-center gap-2"
+                >
+                  <Zap className="w-4 h-4" />
+                  <span>Play {prevRound.title}</span>
+                </Link>
+                <Link
+                  href={`/${slug}`}
+                  className="w-full py-3 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition block text-center"
+                >
+                  Back to Overview
+                </Link>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      if (prevEntry.qualified_for_next_round === false) {
+        return (
+          <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
+            <div className="w-full max-w-md p-8 sm:p-10 rounded-3xl bg-white border border-[#ebdcd1] shadow-2xl space-y-6 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto text-rose-600 shadow-sm">
+                <AlertCircle className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <span className="px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold uppercase tracking-wider">
+                  Qualification Not Met
+                </span>
+                <h1 className="text-2xl font-bold text-slate-900">Did Not Qualify for {currentRound.title}</h1>
+                <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                  Your score of <strong className="text-slate-900">{prevEntry.score} pts</strong> ({prevEntry.total_correct} correct) in {prevRound.title} did not meet the minimum qualification threshold (min {prevRound.min_score_to_qualify || 0} pts).
+                </p>
+              </div>
+              <div className="flex flex-col gap-2.5 pt-2">
+                <Link
+                  href={`/${slug}/results?entryId=${prevEntry.id}`}
+                  className="w-full py-3.5 px-6 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/25 transition flex items-center justify-center gap-2"
+                >
+                  <Trophy className="w-4 h-4" />
+                  <span>View {prevRound.title} Results</span>
+                </Link>
+                <Link
+                  href={`/${slug}`}
+                  className="w-full py-3 px-6 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition block text-center"
+                >
+                  Back to Overview
+                </Link>
+              </div>
+            </div>
+          </div>
+        );
+      }
+    }
   }
 
   // Check if competition start time has not arrived yet

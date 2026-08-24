@@ -880,9 +880,13 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     const userId = currentUser?.id;
     let existingEntry: Entry | undefined;
     if (userId) {
-      existingEntry = entries.find(
-        (e) => e.quiz_id === quizId && e.user_id === userId && (roundId ? e.round_id === roundId : true)
-      );
+      existingEntry = entries.find((e) => {
+        if (e.quiz_id !== quizId || e.user_id !== userId) return false;
+        if (targetQuiz?.quiz_type === 'tournament') {
+          return roundId ? e.round_id === roundId : false;
+        }
+        return true;
+      });
     }
 
     // If retries are disallowed, check if user already submitted
