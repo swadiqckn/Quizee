@@ -6,7 +6,7 @@ export type ProgressionMode = 'manual' | 'automatic';
 export type ScoringStrategy = 'fixed' | 'time_decay';
 export type QuizStatus = 'draft' | 'published' | 'live' | 'completed' | 'archived';
 export type RoundStatus = 'pending' | 'active' | 'completed';
-export type EntryStatus = 'in_progress' | 'submitted' | 'disqualified';
+export type EntryStatus = 'in_progress' | 'submitted' | 'disqualified' | 'flagged_for_cheating';
 export type AttachmentType = 'image' | 'audio' | 'document' | 'none';
 
 export interface PlanLimits {
@@ -52,6 +52,7 @@ export interface Organisation {
   name: string;
   slug: string;
   logo_url: string | null;
+  owner_id?: string | null;
   plan: PlanType;
   quizzes_created_this_month: number;
   settings: {
@@ -99,6 +100,8 @@ export interface Quiz {
   shuffle_options: boolean;
   enable_referral_bonus: boolean;
   referral_bonus_points: number;
+  anti_cheat_enabled?: boolean; // When true, client-side proctoring (tab blur, copy protection, violation limits) is active
+  max_violations?: number; // Max allowed proctoring violations before auto-submission (default: 3)
   allow_retries?: boolean; // When true, contestants can try again from results page (default: false)
   is_public?: boolean; // When true, listed on explore directory; when false, only accessible via direct link/slug
   status: QuizStatus;
@@ -175,6 +178,7 @@ export interface Entry {
   total_time_taken_ms: number;
   qualified_for_next_round: boolean;
   status: EntryStatus;
+  violations_count?: number;
   started_at: string;
   completed_at: string | null;
   user?: Profile;

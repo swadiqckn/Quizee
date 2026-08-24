@@ -33,7 +33,7 @@ export default function EditQuizPage() {
   const router = useRouter();
   const quizId = params.quizId as string;
 
-  const { quizzes, updateQuiz, deleteQuiz, isLoading } = useQuizPlatform();
+  const { quizzes, updateQuiz, deleteQuiz, currentUser, isLoading } = useQuizPlatform();
   const [directQuiz, setDirectQuiz] = useState<any>(null);
   const [isFetchingDirect, setIsFetchingDirect] = useState(false);
 
@@ -65,6 +65,10 @@ export default function EditQuizPage() {
   const [referralBonusPoints, setReferralBonusPoints] = useState<number>(25);
   const [isPublic, setIsPublic] = useState<boolean>(true);
 
+  // Anti-Cheat & Proctoring Settings
+  const [antiCheatEnabled, setAntiCheatEnabled] = useState<boolean>(false);
+  const [maxViolations, setMaxViolations] = useState<number>(3);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -90,6 +94,8 @@ export default function EditQuizPage() {
       setAllowRetries(quiz.allow_retries ?? false);
       setEnableReferralBonus(quiz.enable_referral_bonus ?? true);
       setReferralBonusPoints(quiz.referral_bonus_points ?? 25);
+      setAntiCheatEnabled(quiz.anti_cheat_enabled ?? false);
+      setMaxViolations(quiz.max_violations ?? 3);
     }
   }, [quiz]);
 
@@ -140,6 +146,29 @@ export default function EditQuizPage() {
     );
   }
 
+  const isOwner = currentUser?.role === 'superadmin' || !quiz.created_by || quiz.created_by === currentUser?.id;
+
+  if (!isOwner) {
+    return (
+      <div className="max-w-xl mx-auto py-20 text-center space-y-4 p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-sm my-8">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-sm">
+          <Shield className="w-7 h-7" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Access Restricted</h2>
+        <p className="text-xs text-slate-600 font-medium">
+          You do not have permission to edit this competition because it was created by another organizer.
+        </p>
+        <Link
+          href="/admin/dashboard"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold transition shadow-sm mt-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Return to Your Dashboard
+        </Link>
+      </div>
+    );
+  }
+
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) return;
@@ -166,6 +195,8 @@ export default function EditQuizPage() {
         allow_retries: allowRetries,
         enable_referral_bonus: enableReferralBonus,
         referral_bonus_points: Number(referralBonusPoints),
+        anti_cheat_enabled: antiCheatEnabled,
+        max_violations: Number(maxViolations),
       });
 
       setSaveSuccess(true);
@@ -615,6 +646,92 @@ export default function EditQuizPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+
+        {/* Section: Anti-Cheating & Proctoring Protection */}
+        <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-indigo-600" />
+              Anti-Cheating & Proctoring Protection
+            </h2>
+            <span
+              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                antiCheatEnabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {antiCheatEnabled ? '🛡️ Proctoring Active' : 'Disabled'}
+            </span>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={antiCheatEnabled}
+                    onChange={(e) => setAntiCheatEnabled(e.target.checked)}
+                    className="w-5 h-5 rounded text-[#e05a38] border-slate-300 focus:ring-0"
+                  />
+                  <span className="text-sm font-bold text-slate-900">
+                    Enable Anti-Cheating Protection
+                  </span>
+                </label>
+                <p className="text-xs text-slate-500 font-medium pl-8">
+                  Monitors and prevents tab switching, window blurring, mobile assistant overlays, and disables copy-paste during quiz sessions.
+                </p>
+              </div>
+
+              {antiCheatEnabled && (
+                <div className="shrink-0 w-full sm:w-48 pl-8 sm:pl-0">
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Max Allowed Violations
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={maxViolations}
+                      onChange={(e) => setMaxViolations(Math.max(1, Math.min(10, Number(e.target.value))))}
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
+                    />
+                    <span className="text-xs text-slate-500 font-medium">strikes</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {antiCheatEnabled && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200">
+                <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                  <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                    👁️ Tab Switch Detection
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Triggers violation warning when contestant navigates away.
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                  <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                    📱 Overlay & Blur Guard
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Flags window blur &gt; 1.2s (multi-tasking & assistant popups).
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                  <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                    🚫 Content Copy Lock
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Blocks text selection, right-click, cut, copy, paste, and devtools.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

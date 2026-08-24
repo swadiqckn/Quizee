@@ -237,6 +237,8 @@ export const MOCK_QUIZZES: Quiz[] = [
     shuffle_options: true,
     enable_referral_bonus: true,
     referral_bonus_points: 25,
+    anti_cheat_enabled: true,
+    max_violations: 3,
     status: 'published',
     max_participants: 100, // Free plan limit
     start_time: new Date(Date.now() - 2 * 3600000).toISOString(),

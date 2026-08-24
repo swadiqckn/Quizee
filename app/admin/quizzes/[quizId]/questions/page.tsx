@@ -25,6 +25,7 @@ import {
   X,
   FileText,
   Settings,
+  Shield,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { Question, QuestionOption, AttachmentType } from '@/lib/types';
@@ -40,7 +41,7 @@ const CSV_TEMPLATE_CONTENT = `question_text,option_a,option_b,option_c,option_d,
 export default function ManageQuestionsPage() {
   const params = useParams();
   const quizId = params.quizId as string;
-  const { quizzes, rounds, questions, addQuestion, updateQuestion, deleteQuestion, isLoading } = useQuizPlatform();
+  const { quizzes, rounds, questions, addQuestion, updateQuestion, deleteQuestion, currentUser, isLoading } = useQuizPlatform();
   const [directQuiz, setDirectQuiz] = useState<any>(null);
   const [isFetchingDirect, setIsFetchingDirect] = useState(false);
 
@@ -125,6 +126,29 @@ export default function ManageQuestionsPage() {
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Organizer Dashboard
+        </Link>
+      </div>
+    );
+  }
+
+  const isOwner = currentUser?.role === 'superadmin' || !quiz.created_by || quiz.created_by === currentUser?.id;
+
+  if (!isOwner) {
+    return (
+      <div className="max-w-xl mx-auto py-20 text-center space-y-4 p-8 rounded-3xl bg-white border border-[#ebdcd1] shadow-sm my-8">
+        <div className="w-14 h-14 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center mx-auto text-amber-600 shadow-sm">
+          <Shield className="w-7 h-7" />
+        </div>
+        <h2 className="text-xl font-bold text-slate-900">Access Restricted</h2>
+        <p className="text-xs text-slate-600 font-medium">
+          You do not have permission to manage questions for this competition because it was created by another organizer.
+        </p>
+        <Link
+          href="/admin/dashboard"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold transition shadow-sm mt-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Return to Your Dashboard
         </Link>
       </div>
     );

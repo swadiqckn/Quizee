@@ -188,7 +188,9 @@ function SlugQuizResultsContent() {
 
         <div className="space-y-2">
           <h1 className="text-3xl font-bold text-slate-900">
-            {entry.qualified_for_next_round
+            {entry.status === 'flagged_for_cheating'
+              ? '⚠️ Attempt Flagged'
+              : entry.qualified_for_next_round
               ? '🎉 Qualification Achieved!'
               : entry.score > 0
               ? 'Quiz Completed!'
@@ -198,6 +200,21 @@ function SlugQuizResultsContent() {
             {quiz.title} {round ? `• ${round.title}` : ''}
           </p>
         </div>
+
+        {/* Anti-Cheat Proctoring Flag Alert */}
+        {entry.status === 'flagged_for_cheating' && (
+          <div className="p-5 rounded-2xl bg-rose-50 border-2 border-rose-300 max-w-lg mx-auto text-left flex items-start gap-3.5 shadow-sm">
+            <AlertCircle className="w-6 h-6 text-rose-600 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-xs font-bold uppercase tracking-wider text-rose-900">
+                ⚠️ Flagged for Proctoring Violations
+              </p>
+              <p className="text-xs text-rose-700 leading-relaxed font-medium">
+                This attempt was automatically submitted after exceeding allowed window switches or tab blur events ({entry.violations_count || quiz.max_violations || 3} violations logged). Results are flagged for organizer review.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Tournament Qualification Status Banner */}
         {quiz.quiz_type === 'tournament' && (

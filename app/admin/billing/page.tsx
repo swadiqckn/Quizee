@@ -19,9 +19,12 @@ import { useQuizPlatform } from '@/lib/context';
 import { PLAN_CONFIG, PlanType } from '@/lib/types';
 
 export default function AdminBillingPage() {
-  const { activeOrg, upgradeActiveOrgPlan, currentUser } = useQuizPlatform();
+  const { activeOrg, upgradeActiveOrgPlan, currentUser, quizzes } = useQuizPlatform();
   const currentPlan: PlanType = activeOrg?.plan || 'free';
-  const currentQuizzesCount = activeOrg?.quizzes_created_this_month || 0;
+  const isSuperadmin = currentUser?.role === 'superadmin';
+  const currentQuizzesCount = isSuperadmin
+    ? (activeOrg?.quizzes_created_this_month || 0)
+    : quizzes.filter((q) => q.created_by === currentUser?.id).length;
   const [upgradedSuccess, setUpgradedSuccess] = useState(false);
 
   const handleSelectPlan = async (plan: PlanType) => {

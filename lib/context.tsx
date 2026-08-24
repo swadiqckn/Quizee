@@ -8,6 +8,7 @@ import {
   TournamentRound,
   Question,
   Entry,
+  EntryStatus,
   Winner,
   Referral,
   ScoringStrategy,
@@ -67,6 +68,8 @@ interface QuizPlatformContextType {
   // Subscription / Plan Actions
   upgradeActiveOrgPlan: (newPlan: PlanType) => Promise<void>;
   canCreateQuiz: () => { allowed: boolean; reason?: string; currentCount: number; maxAllowed: number | 'unlimited' };
+  createOrganisation: (data: { name: string; slug?: string; logo_url?: string }) => Promise<{ success: boolean; organisation?: Organisation; error?: string }>;
+  updateOrganisation: (orgId: string, updates: Partial<Organisation>) => Promise<{ success: boolean; organisation?: Organisation; error?: string }>;
 
   // Quiz Actions
   createQuiz: (quiz: Partial<Quiz>) => Promise<{ success: boolean; quiz?: Quiz; error?: string }>;
@@ -92,6 +95,8 @@ interface QuizPlatformContextType {
       selectedOptionIds: string[];
       timeTakenMs: number;
     }>;
+    status?: EntryStatus;
+    violationsCount?: number;
   }) => Promise<{ entry: Entry; score: number; qualified: boolean; totalCorrect: number }>;
   
   manuallyQualifyEntry: (entryId: string, qualified: boolean) => Promise<void>;
@@ -118,21 +123,21 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
 
   const loadUserProfile = async (authUser: any) => {
     try {
+      const username = authUser.email
+        ? authUser.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_')
+        : `user_${Date.now()}`;
+
       const { data: profile } = await supabase
         .from('users')
         .select('*')
         .eq('email', authUser.email)
         .single();
 
+      let activeUserProfile: Profile;
+
       if (profile) {
-        setCurrentUser(profile);
-        try {
-          localStorage.setItem('quizee_current_user', JSON.stringify(profile));
-        } catch (e) {}
+        activeUserProfile = profile;
       } else {
-        const username = authUser.email
-          ? authUser.email.split('@')[0].replace(/[^a-zA-Z0-9_]/g, '_')
-          : `user_${Date.now()}`;
         const newRefCode = Math.random().toString(36).substring(2, 10).toUpperCase();
         const newProfile: Profile = {
           id: authUser.id,
@@ -149,7 +154,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
           role: 'admin',
           auth_provider: 'google',
           google_id: authUser.id,
-          org_id: activeOrg?.id || null,
+          org_id: null,
           referral_code: newRefCode,
           referred_by: null,
           total_points: 0,
@@ -158,11 +163,66 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         };
 
         await supabase.from('users').upsert(newProfile);
-        setCurrentUser(newProfile);
+        activeUserProfile = newProfile;
+      }
+
+      // Ensure this admin has a personal workspace organization linked via owner_id
+      let userOrg = organisations.find(
+        (o) => o.owner_id === activeUserProfile.id || (activeUserProfile.org_id && o.id === activeUserProfile.org_id)
+      );
+
+      if (!userOrg) {
         try {
-          localStorage.setItem('quizee_current_user', JSON.stringify(newProfile));
+          const { data: dbOrg } = await supabase
+            .from('organisations')
+            .select('*')
+            .eq('owner_id', activeUserProfile.id)
+            .maybeSingle();
+
+          if (dbOrg) {
+            userOrg = dbOrg;
+          }
         } catch (e) {}
       }
+
+      if (!userOrg) {
+        const orgSlug = `${username.toLowerCase().replace(/[^a-z0-9_-]/g, '')}-workspace`;
+        try {
+          const { data: createdOrg } = await supabase
+            .from('organisations')
+            .insert({
+              name: `${activeUserProfile.full_name || username}'s Workspace`,
+              slug: `${orgSlug}-${Date.now().toString(36).slice(-4)}`,
+              owner_id: activeUserProfile.id,
+              plan: 'free',
+              quizzes_created_this_month: 0,
+            })
+            .select()
+            .single();
+
+          if (createdOrg) {
+            userOrg = createdOrg;
+            setOrganisations((prev) => [...prev.filter((o) => o.id !== createdOrg.id), createdOrg]);
+            activeUserProfile = { ...activeUserProfile, org_id: createdOrg.id };
+            await supabase.from('users').update({ org_id: createdOrg.id }).eq('id', activeUserProfile.id);
+          }
+        } catch (e) {}
+      }
+
+      if (userOrg) {
+        setActiveOrg(userOrg);
+        if (activeUserProfile.org_id !== userOrg.id) {
+          activeUserProfile = { ...activeUserProfile, org_id: userOrg.id };
+          try {
+            await supabase.from('users').update({ org_id: userOrg.id }).eq('id', activeUserProfile.id);
+          } catch (e) {}
+        }
+      }
+
+      setCurrentUser(activeUserProfile);
+      try {
+        localStorage.setItem('quizee_current_user', JSON.stringify(activeUserProfile));
+      } catch (e) {}
     } catch (err) {
       console.error('Error fetching Supabase user profile:', err);
     }
@@ -471,7 +531,10 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
 
   const canCreateQuiz = () => {
     const currentPlan: PlanType = activeOrg?.plan || 'free';
-    const currentCount = activeOrg?.quizzes_created_this_month || 0;
+    const isSuperadmin = currentUser?.role === 'superadmin';
+    const currentCount = isSuperadmin
+      ? (activeOrg?.quizzes_created_this_month || 0)
+      : quizzes.filter((q) => q.created_by === currentUser?.id).length;
     const maxAllowed = PLAN_CONFIG[currentPlan].maxQuizzesPerMonth;
 
     if (maxAllowed !== 'unlimited' && currentCount >= maxAllowed) {
@@ -484,6 +547,67 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     }
 
     return { allowed: true, currentCount, maxAllowed };
+  };
+
+  const createOrganisation = async (data: { name: string; slug?: string; logo_url?: string }): Promise<{ success: boolean; organisation?: Organisation; error?: string }> => {
+    if (!currentUser) return { success: false, error: 'User must be logged in to create an organization.' };
+    const orgSlug = data.slug?.trim() || slugify(data.name || 'org');
+
+    try {
+      const { data: newOrg, error } = await supabase
+        .from('organisations')
+        .insert({
+          name: data.name.trim(),
+          slug: `${orgSlug}-${Date.now().toString(36).slice(-4)}`,
+          logo_url: data.logo_url?.trim() || null,
+          owner_id: currentUser.id,
+          plan: 'free',
+          quizzes_created_this_month: 0,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (newOrg) {
+        setOrganisations((prev) => [...prev, newOrg]);
+        setActiveOrg(newOrg);
+        return { success: true, organisation: newOrg };
+      }
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+
+    return { success: false, error: 'Failed to create organization.' };
+  };
+
+  const updateOrganisation = async (orgId: string, updates: Partial<Organisation>): Promise<{ success: boolean; organisation?: Organisation; error?: string }> => {
+    try {
+      const { data: updatedOrg, error } = await supabase
+        .from('organisations')
+        .update(updates)
+        .eq('id', orgId)
+        .select()
+        .single();
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      if (updatedOrg) {
+        setOrganisations((prev) => prev.map((o) => (o.id === orgId ? updatedOrg : o)));
+        if (activeOrg?.id === orgId) {
+          setActiveOrg(updatedOrg);
+        }
+        return { success: true, organisation: updatedOrg };
+      }
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+
+    return { success: false, error: 'Failed to update organization.' };
   };
 
   const createQuiz = async (quizData: Partial<Quiz>): Promise<{ success: boolean; quiz?: Quiz; error?: string }> => {
@@ -513,6 +637,8 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       shuffle_options: quizData.shuffle_options ?? true,
       enable_referral_bonus: quizData.enable_referral_bonus ?? false,
       referral_bonus_points: quizData.referral_bonus_points ?? 10,
+      anti_cheat_enabled: quizData.anti_cheat_enabled ?? false,
+      max_violations: quizData.max_violations ?? 3,
       is_public: quizData.is_public !== false,
       status: quizData.status || 'published',
       max_participants: participantCap,
@@ -750,10 +876,14 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     quizId,
     roundId,
     answers,
+    status,
+    violationsCount,
   }: {
     quizId: string;
     roundId: string | null;
     answers: Array<{ questionId: string; selectedOptionIds: string[]; timeTakenMs: number }>;
+    status?: EntryStatus;
+    violationsCount?: number;
   }) => {
     const targetQuiz = quizzes.find((q) => q.id === quizId);
     const targetRound = rounds.find((r) => r.id === roundId);
@@ -761,7 +891,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     // If retries are disallowed, check if user already submitted
     if (targetQuiz && targetQuiz.allow_retries !== true && currentUser) {
       const existing = entries.find(
-        (e) => e.quiz_id === quizId && e.user_id === currentUser.id && e.status === 'submitted'
+        (e) => e.quiz_id === quizId && e.user_id === currentUser.id && (e.status === 'submitted' || e.status === 'flagged_for_cheating')
       );
       if (existing) {
         return {
@@ -842,6 +972,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       };
     });
 
+    const finalStatus: EntryStatus = status || 'submitted';
     const entryPayload = {
       quiz_id: quizId,
       round_id: roundId,
@@ -849,8 +980,9 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       score: calculatedScore,
       total_correct: totalCorrectCount,
       total_time_taken_ms: totalTimeTaken,
-      qualified_for_next_round: isQualified,
-      status: 'submitted' as const,
+      qualified_for_next_round: finalStatus === 'flagged_for_cheating' ? false : isQualified,
+      status: finalStatus,
+      violations_count: violationsCount || 0,
       started_at: new Date(Date.now() - totalTimeTaken).toISOString(),
       completed_at: new Date().toISOString(),
     };
@@ -991,6 +1123,8 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         logout,
         upgradeActiveOrgPlan,
         canCreateQuiz,
+        createOrganisation,
+        updateOrganisation,
         createQuiz,
         updateQuiz,
         deleteQuiz,

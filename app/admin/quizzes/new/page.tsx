@@ -52,6 +52,10 @@ export default function NewQuizPage() {
   const [allowRetries, setAllowRetries] = useState<boolean>(false);
   const [isPublic, setIsPublic] = useState<boolean>(true);
 
+  // Anti-Cheat & Proctoring Settings
+  const [antiCheatEnabled, setAntiCheatEnabled] = useState<boolean>(false);
+  const [maxViolations, setMaxViolations] = useState<number>(3);
+
   // Referral System Settings
   const [enableReferralBonus, setEnableReferralBonus] = useState<boolean>(true);
   const [referralBonusPoints, setReferralBonusPoints] = useState<number>(25);
@@ -93,6 +97,8 @@ export default function NewQuizPage() {
       shuffle_options: shuffleOptions,
       enable_referral_bonus: enableReferralBonus,
       referral_bonus_points: Number(referralBonusPoints),
+      anti_cheat_enabled: antiCheatEnabled,
+      max_violations: Number(maxViolations),
       allow_retries: allowRetries,
       is_public: isPublic,
       status: 'published',
@@ -645,6 +651,92 @@ export default function NewQuizPage() {
                 Default: <strong>Disabled (No retry)</strong>. When enabled, a "Try Again" button will be shown on the results page.
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Section 5: Anti-Cheating & Proctoring Protection */}
+        <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-indigo-600" />
+              5. Anti-Cheating & Proctoring Protection
+            </h2>
+            <span
+              className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                antiCheatEnabled ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {antiCheatEnabled ? '🛡️ Proctoring Active' : 'Disabled'}
+            </span>
+          </div>
+
+          <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200 space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={antiCheatEnabled}
+                    onChange={(e) => setAntiCheatEnabled(e.target.checked)}
+                    className="w-5 h-5 rounded text-[#e05a38] border-slate-300 focus:ring-0"
+                  />
+                  <span className="text-sm font-bold text-slate-900">
+                    Enable Anti-Cheating Protection
+                  </span>
+                </label>
+                <p className="text-xs text-slate-500 font-medium pl-8">
+                  Monitors and prevents tab switching, window blurring, mobile assistant overlays, and disables copy-paste during quiz sessions.
+                </p>
+              </div>
+
+              {antiCheatEnabled && (
+                <div className="shrink-0 w-full sm:w-48 pl-8 sm:pl-0">
+                  <label className="text-[11px] font-bold text-slate-700 block mb-1">
+                    Max Allowed Violations
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={maxViolations}
+                      onChange={(e) => setMaxViolations(Math.max(1, Math.min(10, Number(e.target.value))))}
+                      className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-xs text-slate-900 font-bold focus:outline-none focus:border-[#e05a38]"
+                    />
+                    <span className="text-xs text-slate-500 font-medium">strikes</span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {antiCheatEnabled && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-slate-200">
+                <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                  <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                    👁️ Tab Switch Detection
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Triggers violation warning when contestant navigates away.
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                  <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                    📱 Overlay & Blur Guard
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Flags window blur &gt; 1.2s (multi-tasking & assistant popups).
+                  </p>
+                </div>
+                <div className="p-3 rounded-xl bg-white border border-slate-200 text-xs space-y-1">
+                  <p className="font-bold text-slate-800 flex items-center gap-1.5">
+                    🚫 Content Copy Lock
+                  </p>
+                  <p className="text-[11px] text-slate-500">
+                    Blocks text selection, right-click, cut, copy, paste, and devtools.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

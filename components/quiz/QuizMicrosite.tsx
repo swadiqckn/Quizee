@@ -31,6 +31,8 @@ import {
   Flame,
   ChevronLeft,
   Info,
+  Play,
+  Lock,
 } from 'lucide-react';
 import { Quiz, TournamentRound, Question, Entry, Profile, AnswerReviewItem } from '@/lib/types';
 import { formatTimeMs, formatDate } from '@/lib/utils';
@@ -56,76 +58,79 @@ export function QuizMicrosite({
   const [copiedLink, setCopiedLink] = useState(false);
   const [showAnswersAccordion, setShowAnswersAccordion] = useState(true);
 
-  const quizRounds = rounds.filter((r) => r.quiz_id === quiz.id).sort((a, b) => a.round_number - b.round_number);
-  const activeRound = quiz.quiz_type === 'tournament'
-    ? quizRounds.find((r) => r.status === 'active') || quizRounds[0]
-    : null;
+  // Real-time ticking clock for second-by-second countdown transitions
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
 
-  // Check existing user entry
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Map user entries per round
+  const userRoundEntriesMap = new Map<string, Entry>();
+  entries.forEach((e) => {
+    if (e.quiz_id === quiz.id && (currentUser ? e.user_id === currentUser.id : false) && e.status === 'submitted') {
+      if (e.round_id) {
+        userRoundEntriesMap.set(e.round_id, e);
+      }
+    }
+  });
+
+  // Overall user entry (fallback for single-quiz mode)
   const userEntry = entries.find(
     (e) => e.quiz_id === quiz.id && (currentUser ? e.user_id === currentUser.id : false) && e.status === 'submitted'
   );
   const disallowRetries = quiz.allow_retries !== true;
 
-  // Real-time Countdown Timer Logic
-  const scheduledStartTimeStr = activeRound?.scheduled_start_time || quiz.start_time;
-  const [timeLeft, setTimeLeft] = useState<{
-    days: number;
-    hours: number;
-    minutes: number;
-    seconds: number;
-    totalMs: number;
-    isStarted: boolean;
-  }>({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    totalMs: 0,
-    isStarted: true,
-  });
+  // Real-time helper for round timings and countdown
+  const getRoundTiming = (r: TournamentRound) => {
+    const startMs = r.scheduled_start_time ? new Date(r.scheduled_start_time).getTime() : 0;
+    const endMs = r.scheduled_end_time ? new Date(r.scheduled_end_time).getTime() : 0;
+    
+    // An upcoming round is one whose start time is in the future
+    const isUpcoming = startMs > 0 && startMs > currentTime;
+    
+    // A live round has started and not ended (or marked active)
+    const isLive = !isUpcoming && (r.status === 'active' || (startMs > 0 && startMs <= currentTime && (endMs === 0 || endMs > currentTime)));
+    
+    // A closed round has passed its end time
+    const isClosed = !isUpcoming && !isLive && (r.status === 'completed' || (endMs > 0 && endMs <= currentTime));
 
-  useEffect(() => {
-    if (!scheduledStartTimeStr) {
-      setTimeLeft((prev) => ({ ...prev, isStarted: true }));
-      return;
-    }
+    const diff = isUpcoming ? startMs - currentTime : 0;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
-    const calculateTime = () => {
-      const startMs = new Date(scheduledStartTimeStr).getTime();
-      const nowMs = Date.now();
-      const diff = startMs - nowMs;
+    const countdownText = `${days > 0 ? `${days}d ` : ''}${hours > 0 ? `${hours}h ` : ''}${minutes}m ${seconds}s`;
 
-      if (diff <= 0) {
-        setTimeLeft({
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-          totalMs: 0,
-          isStarted: true,
-        });
-      } else {
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    return { startMs, endMs, isUpcoming, isLive, isClosed, days, hours, minutes, seconds, countdownText, diff };
+  };
 
-        setTimeLeft({
-          days,
-          hours,
-          minutes,
-          seconds,
-          totalMs: diff,
-          isStarted: false,
-        });
-      }
-    };
+  // Tournament Sorted Rounds
+  const quizRounds = rounds.filter((r) => r.quiz_id === quiz.id).sort((a, b) => a.round_number - b.round_number);
 
-    calculateTime();
-    const interval = setInterval(calculateTime, 1000);
-    return () => clearInterval(interval);
-  }, [scheduledStartTimeStr]);
+  // Determine the primary focus round for this contestant
+  // 1. Find the earliest round in sequence the user has NOT played yet
+  const nextUnplayedRound = quizRounds.find((r) => !userRoundEntriesMap.has(r.id));
+  const activeFocusRound = nextUnplayedRound || quizRounds[quizRounds.length - 1] || null;
+  const activeFocusTiming = activeFocusRound ? getRoundTiming(activeFocusRound) : null;
+  const isFocusRoundCompleted = activeFocusRound ? userRoundEntriesMap.has(activeFocusRound.id) : false;
+  const userFocusRoundEntry = activeFocusRound ? userRoundEntriesMap.get(activeFocusRound.id) : null;
+
+  // Single Quiz Timing
+  const quizStartMs = quiz.start_time ? new Date(quiz.start_time).getTime() : 0;
+  const isQuizUpcoming = quizStartMs > 0 && quizStartMs > currentTime;
+  const singleDiff = isQuizUpcoming ? quizStartMs - currentTime : 0;
+  const singleCountdown = {
+    days: Math.floor(singleDiff / (1000 * 60 * 60 * 24)),
+    hours: Math.floor((singleDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+    minutes: Math.floor((singleDiff % (1000 * 60 * 60)) / (1000 * 60)),
+    seconds: Math.floor((singleDiff % (1000 * 60)) / 1000),
+    text: `${Math.floor((singleDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)) > 0 ? `${Math.floor((singleDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))}h ` : ''}${Math.floor((singleDiff % (1000 * 60)) / (1000 * 60))}m ${Math.floor((singleDiff % (1000 * 60)) / 1000)}s`,
+  };
 
   // Retrieve cached answers breakdown if available
   const [breakdown, setBreakdown] = useState<AnswerReviewItem[]>([]);
@@ -294,7 +299,24 @@ export function QuizMicrosite({
             {/* Top Status Badges */}
             <div className="flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex flex-wrap items-center gap-2">
-                {timeLeft.isStarted ? (
+                {quiz.quiz_type === 'tournament' ? (
+                  activeFocusTiming?.isLive ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#e05a38] text-white text-[11px] font-bold shadow-sm shadow-[#e05a38]/20 uppercase tracking-wider animate-pulse">
+                      <Flame className="w-3 h-3" />
+                      Round {activeFocusRound?.round_number} is Live
+                    </span>
+                  ) : activeFocusTiming?.isUpcoming ? (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#fffbeb] text-[#b45309] border border-[#fde68a] text-[11px] font-bold uppercase tracking-wider">
+                      <Clock className="w-3 h-3" />
+                      Round {activeFocusRound?.round_number} Starts in {activeFocusTiming.countdownText}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-bold uppercase tracking-wider">
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      Tournament Active
+                    </span>
+                  )
+                ) : !isQuizUpcoming ? (
                   <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#e05a38] text-white text-[11px] font-bold shadow-sm shadow-[#e05a38]/20 uppercase tracking-wider">
                     <Flame className="w-3 h-3" />
                     Live Arena
@@ -302,7 +324,7 @@ export function QuizMicrosite({
                 ) : (
                   <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#fffbeb] text-[#b45309] border border-[#fde68a] text-[11px] font-bold uppercase tracking-wider">
                     <Clock className="w-3 h-3" />
-                    Starts in {timeLeft.hours > 0 ? `${timeLeft.hours}h ` : ''}{timeLeft.minutes}m {timeLeft.seconds}s
+                    Starts in {singleCountdown.text}
                   </span>
                 )}
 
@@ -390,54 +412,140 @@ export function QuizMicrosite({
         {/* ========================================================================= */}
         {activeTab === 'home' && (
           <div className="space-y-6">
-            {/* Primary Action Card */}
+            {/* Primary Focus Action Card */}
             <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-white to-[#fff9f6] border-2 border-[#ffd5c4] shadow-lg space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <span className="text-[11px] font-bold text-[#e05a38] uppercase tracking-wider">
-                    {timeLeft.isStarted ? 'Ready to Compete?' : 'Upcoming Competition'}
+                  <span className="text-[11px] font-bold text-[#e05a38] uppercase tracking-wider flex items-center gap-1.5">
+                    {quiz.quiz_type === 'tournament' ? (
+                      activeFocusTiming?.isUpcoming ? (
+                        <>
+                          <Clock className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Upcoming Stage: Round {activeFocusRound?.round_number}</span>
+                        </>
+                      ) : isFocusRoundCompleted ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Tournament Progression</span>
+                        </>
+                      ) : (
+                        <>
+                          <Flame className="w-3.5 h-3.5 text-[#e05a38]" />
+                          <span>Live Tournament Stage</span>
+                        </>
+                      )
+                    ) : isQuizUpcoming ? (
+                      <>
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Upcoming Competition</span>
+                      </>
+                    ) : (
+                      <>
+                        <Flame className="w-3.5 h-3.5 text-[#e05a38]" />
+                        <span>Ready to Compete?</span>
+                      </>
+                    )}
                   </span>
-                  <h2 className="text-xl font-bold text-slate-900">
-                    {userEntry && disallowRetries
-                      ? 'Attempt Completed'
-                      : !timeLeft.isStarted
-                      ? `Starts in: ${timeLeft.hours > 0 ? `${timeLeft.hours}h ` : ''}${timeLeft.minutes}m ${timeLeft.seconds}s`
-                      : activeRound
-                      ? `Arena Open: ${activeRound.title}`
-                      : 'Live Competition Arena'}
+
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900">
+                    {quiz.quiz_type === 'tournament' ? (
+                      isFocusRoundCompleted ? (
+                        'Tournament Completed!'
+                      ) : activeFocusTiming?.isUpcoming ? (
+                        `Starts in: ${activeFocusTiming.countdownText}`
+                      ) : (
+                        `Live Now: ${activeFocusRound?.title}`
+                      )
+                    ) : userEntry && disallowRetries ? (
+                      'Attempt Completed'
+                    ) : isQuizUpcoming ? (
+                      `Starts in: ${singleCountdown.text}`
+                    ) : (
+                      'Live Competition Arena'
+                    )}
                   </h2>
-                  <p className="text-xs text-slate-500 font-medium">
-                    {userEntry && disallowRetries
-                      ? `Your score of ${userEntry.score} pts is recorded on the leaderboard.`
-                      : !timeLeft.isStarted
-                      ? `Competition is scheduled to begin at ${formatDate(scheduledStartTimeStr)}. Stand by to start.`
-                      : 'Answer quickly to secure speed points and climb the rankings.'}
+
+                  <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                    {quiz.quiz_type === 'tournament' ? (
+                      isFocusRoundCompleted ? (
+                        `You have submitted your attempt for all stages. Your score is recorded on the live leaderboard.`
+                      ) : activeFocusTiming?.isUpcoming ? (
+                        `Round ${activeFocusRound?.round_number} is scheduled to start on ${formatDate(activeFocusRound?.scheduled_start_time)}. Stand by to start.`
+                      ) : (
+                        `Qualify with ${activeFocusRound?.min_score_to_qualify} pts and ${activeFocusRound?.min_correct_to_qualify} correct answers.`
+                      )
+                    ) : userEntry && disallowRetries ? (
+                      `Your score of ${userEntry.score} pts is recorded on the leaderboard.`
+                    ) : isQuizUpcoming ? (
+                      `Competition is scheduled to begin at ${formatDate(quiz.start_time)}. Stand by to start.`
+                    ) : (
+                      'Answer quickly to secure speed points and climb the rankings.'
+                    )}
                   </p>
                 </div>
 
-                {!timeLeft.isStarted && (
-                  <div className="grid grid-cols-4 gap-2 text-center py-1 max-w-xs">
+                {/* Digital Countdown Timer Boxes when Upcoming */}
+                {((quiz.quiz_type === 'tournament' && activeFocusTiming?.isUpcoming && !isFocusRoundCompleted) ||
+                  (quiz.quiz_type !== 'tournament' && isQuizUpcoming && !(userEntry && disallowRetries))) && (
+                  <div className="grid grid-cols-4 gap-2 text-center py-1 max-w-xs shrink-0">
                     <div className="p-2 rounded-2xl bg-white border border-[#ffd5c4] shadow-xs">
-                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">{String(timeLeft.days).padStart(2, '0')}</span>
+                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">
+                        {String(quiz.quiz_type === 'tournament' ? activeFocusTiming?.days : singleCountdown.days).padStart(2, '0')}
+                      </span>
                       <span className="text-[9px] text-slate-400 font-bold block uppercase">Days</span>
                     </div>
                     <div className="p-2 rounded-2xl bg-white border border-[#ffd5c4] shadow-xs">
-                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">{String(timeLeft.hours).padStart(2, '0')}</span>
+                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">
+                        {String(quiz.quiz_type === 'tournament' ? activeFocusTiming?.hours : singleCountdown.hours).padStart(2, '0')}
+                      </span>
                       <span className="text-[9px] text-slate-400 font-bold block uppercase">Hours</span>
                     </div>
                     <div className="p-2 rounded-2xl bg-white border border-[#ffd5c4] shadow-xs">
-                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">
+                        {String(quiz.quiz_type === 'tournament' ? activeFocusTiming?.minutes : singleCountdown.minutes).padStart(2, '0')}
+                      </span>
                       <span className="text-[9px] text-slate-400 font-bold block uppercase">Mins</span>
                     </div>
                     <div className="p-2 rounded-2xl bg-white border border-[#ffd5c4] shadow-xs">
-                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                      <span className="text-lg font-extrabold text-[#e05a38] font-mono">
+                        {String(quiz.quiz_type === 'tournament' ? activeFocusTiming?.seconds : singleCountdown.seconds).padStart(2, '0')}
+                      </span>
                       <span className="text-[9px] text-slate-400 font-bold block uppercase">Secs</span>
                     </div>
                   </div>
                 )}
 
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {userEntry && disallowRetries ? (
+                {/* Primary Action Buttons */}
+                <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                  {quiz.quiz_type === 'tournament' ? (
+                    isFocusRoundCompleted ? (
+                      <button
+                        onClick={() => setActiveTab('history')}
+                        className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#15803d] hover:bg-[#166534] text-white font-bold text-xs shadow-lg shadow-[#15803d]/25 transition hover:scale-105"
+                      >
+                        <Trophy className="w-4 h-4" />
+                        <span>View Results & History</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    ) : activeFocusTiming?.isUpcoming ? (
+                      <button
+                        disabled
+                        className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs shadow-sm cursor-not-allowed opacity-90"
+                      >
+                        <Clock className="w-4 h-4 text-amber-600 animate-spin" />
+                        <span>Starts in {activeFocusTiming.countdownText}</span>
+                      </button>
+                    ) : (
+                      <Link
+                        href={`/${slug}/play${activeFocusRound ? `?roundId=${activeFocusRound.id}` : ''}`}
+                        className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/25 transition hover:scale-105"
+                      >
+                        <Zap className="w-4 h-4" />
+                        <span>Start Quiz {activeFocusRound ? `(Round ${activeFocusRound.round_number})` : ''}</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </Link>
+                    )
+                  ) : userEntry && disallowRetries ? (
                     <button
                       onClick={() => setActiveTab('history')}
                       className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#15803d] hover:bg-[#166534] text-white font-bold text-xs shadow-lg shadow-[#15803d]/25 transition hover:scale-105"
@@ -446,17 +554,17 @@ export function QuizMicrosite({
                       <span>View Results & Answers ({userEntry.score} pts)</span>
                       <ArrowRight className="w-4 h-4" />
                     </button>
-                  ) : !timeLeft.isStarted ? (
+                  ) : isQuizUpcoming ? (
                     <button
                       disabled
                       className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs shadow-sm cursor-not-allowed opacity-90"
                     >
                       <Clock className="w-4 h-4 text-amber-600 animate-spin" />
-                      <span>Starts in {timeLeft.hours > 0 ? `${timeLeft.hours}h ` : ''}{timeLeft.minutes}m ${timeLeft.seconds}s</span>
+                      <span>Starts in {singleCountdown.text}</span>
                     </button>
                   ) : (
                     <Link
-                      href={`/${slug}/play${activeRound ? `?roundId=${activeRound.id}` : ''}`}
+                      href={`/${slug}/play`}
                       className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/25 transition hover:scale-105"
                     >
                       <Zap className="w-4 h-4" />
@@ -476,7 +584,7 @@ export function QuizMicrosite({
               </div>
             </div>
 
-            {/* Tournament Progression (if tournament) */}
+            {/* Tournament Progression Stages List */}
             {quiz.quiz_type === 'tournament' && (
               <div className="p-6 rounded-3xl bg-white border border-[#ebdcd1] shadow-sm space-y-4">
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -491,41 +599,93 @@ export function QuizMicrosite({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {quizRounds.map((r) => {
-                    const roundStartMs = r.scheduled_start_time ? new Date(r.scheduled_start_time).getTime() : 0;
-                    const isRoundUpcoming = roundStartMs > 0 && roundStartMs > Date.now();
-                    const isRoundActive = !isRoundUpcoming && r.status === 'active';
+                    const timing = getRoundTiming(r);
+                    const completedEntry = userRoundEntriesMap.get(r.id);
 
                     return (
                       <div
                         key={r.id}
-                        className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2"
+                        className={`p-4 sm:p-5 rounded-2xl border space-y-3 transition ${
+                          timing.isLive && !completedEntry
+                            ? 'bg-[#fffaf7] border-[#e05a38] shadow-md shadow-[#e05a38]/10 ring-1 ring-[#e05a38]/30'
+                            : completedEntry
+                            ? 'bg-[#f0fdf4] border-[#bbf7d0]'
+                            : 'bg-slate-50 border-slate-200'
+                        }`}
                       >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-[#e05a38]">Round {r.round_number}</span>
-                          <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase ${
-                              isRoundActive
-                                ? 'bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0]'
-                                : isRoundUpcoming
-                                ? 'bg-[#fffbeb] text-[#b45309] border border-[#fde68a]'
-                                : 'bg-white border border-slate-200 text-slate-600'
-                            }`}
-                          >
-                            {isRoundActive ? 'ACTIVE' : isRoundUpcoming ? 'UPCOMING' : r.status}
+                        {/* Round Header & Status Badge */}
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-xs font-bold text-[#e05a38]">
+                            Round {r.round_number}
                           </span>
+
+                          {completedEntry ? (
+                            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0] flex items-center gap-1">
+                              <Check className="w-3 h-3" />
+                              Completed
+                            </span>
+                          ) : timing.isLive ? (
+                            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-[#e05a38] text-white shadow-xs animate-pulse flex items-center gap-1">
+                              <Flame className="w-3 h-3" />
+                              Live Now
+                            </span>
+                          ) : timing.isUpcoming ? (
+                            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-[#fffbeb] text-[#b45309] border border-[#fde68a] flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              Starts in {timing.countdownText}
+                            </span>
+                          ) : (
+                            <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-slate-200 text-slate-600">
+                              Closed
+                            </span>
+                          )}
                         </div>
 
-                        <h4 className="text-sm font-bold text-slate-900">{r.title}</h4>
+                        {/* Round Title & Cut-off */}
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-900">{r.title}</h4>
+                          <p className="text-[11px] text-slate-500 font-medium mt-0.5">
+                            Cut-off: <strong>{r.min_score_to_qualify} pts</strong> &{' '}
+                            <strong>{r.min_correct_to_qualify} correct</strong>
+                          </p>
+                          {r.scheduled_start_time && (
+                            <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                              Starts: {formatDate(r.scheduled_start_time)}
+                            </p>
+                          )}
+                        </div>
 
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Starts: {formatDate(r.scheduled_start_time)}
-                        </p>
-                        <p className="text-[11px] text-slate-500 font-medium">
-                          Cut-off: <strong>{r.min_score_to_qualify} pts</strong> &{' '}
-                          <strong>{r.min_correct_to_qualify} correct</strong>
-                        </p>
+                        {/* Stage Action Dock */}
+                        <div className="pt-1">
+                          {completedEntry ? (
+                            <div className="p-2 rounded-xl bg-white border border-[#bbf7d0] text-xs font-bold text-[#15803d] flex items-center justify-between">
+                              <span>✓ Submitted</span>
+                              <span className="font-mono font-extrabold">{completedEntry.score} pts</span>
+                            </div>
+                          ) : timing.isLive ? (
+                            <Link
+                              href={`/${slug}/play?roundId=${r.id}`}
+                              className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 px-4 rounded-xl bg-[#e05a38] hover:bg-[#c84a29] text-white text-xs font-bold shadow-md transition hover:scale-[1.02]"
+                            >
+                              <Zap className="w-3.5 h-3.5" />
+                              <span>Start Quiz (Round {r.round_number})</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </Link>
+                          ) : timing.isUpcoming ? (
+                            <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-center">
+                              <div className="text-[11px] font-bold text-amber-900 flex items-center justify-center gap-1.5">
+                                <Clock className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+                                <span>Starts in: {timing.countdownText}</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="p-2 rounded-xl bg-slate-100 text-slate-400 text-xs font-medium text-center">
+                              Round Ended
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -767,7 +927,7 @@ export function QuizMicrosite({
                   You have not submitted an attempt for <strong>{quiz.title}</strong>. Enter the arena to record your score!
                 </p>
                 <Link
-                  href={`/${slug}/play${activeRound ? `?roundId=${activeRound.id}` : ''}`}
+                  href={`/${slug}/play${activeFocusRound ? `?roundId=${activeFocusRound.id}` : ''}`}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-md transition"
                 >
                   <Zap className="w-4 h-4" />

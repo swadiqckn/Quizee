@@ -56,7 +56,7 @@ EXCEPTION
 END $$;
 
 DO $$ BEGIN
-    CREATE TYPE entry_status AS ENUM ('in_progress', 'submitted', 'disqualified');
+    CREATE TYPE entry_status AS ENUM ('in_progress', 'submitted', 'disqualified', 'flagged_for_cheating');
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS public.organisations (
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     logo_url TEXT,
+    owner_id UUID, -- References users(id)
     plan plan_type DEFAULT 'free' NOT NULL, -- 'free' (max 100 participants, 2 quizzes/mo) vs 'plus' (unlimited)
     quizzes_created_this_month INTEGER DEFAULT 0 NOT NULL,
     settings JSONB DEFAULT '{"primary_color": "#6366f1", "allow_public_registration": true}'::jsonb,
@@ -94,6 +95,16 @@ CREATE TABLE IF NOT EXISTS public.users (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Foreign key linking organisations.owner_id to users.id
+DO $$ BEGIN
+    ALTER TABLE public.organisations
+        ADD CONSTRAINT fk_organisations_owner_id
+        FOREIGN KEY (owner_id) REFERENCES public.users(id) ON DELETE SET NULL;
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_organisations_owner_id ON public.organisations(owner_id);
 CREATE INDEX IF NOT EXISTS idx_users_username ON public.users(username);
 CREATE INDEX IF NOT EXISTS idx_users_referral_code ON public.users(referral_code);
 CREATE INDEX IF NOT EXISTS idx_users_org_id ON public.users(org_id);
@@ -117,6 +128,8 @@ CREATE TABLE IF NOT EXISTS public.quizzes (
     shuffle_options BOOLEAN DEFAULT TRUE NOT NULL,
     enable_referral_bonus BOOLEAN DEFAULT FALSE NOT NULL,
     referral_bonus_points NUMERIC DEFAULT 10 NOT NULL,
+    anti_cheat_enabled BOOLEAN DEFAULT FALSE NOT NULL,
+    max_violations INTEGER DEFAULT 3 NOT NULL,
     status quiz_status DEFAULT 'draft' NOT NULL,
     max_participants INTEGER DEFAULT 100, -- 100 for Free Plan, NULL for Plus Plan (unlimited)
     start_time TIMESTAMPTZ,
@@ -179,6 +192,7 @@ CREATE TABLE IF NOT EXISTS public.entries (
     total_time_taken_ms INTEGER DEFAULT 0 NOT NULL,
     qualified_for_next_round BOOLEAN DEFAULT FALSE NOT NULL,
     status entry_status DEFAULT 'in_progress' NOT NULL,
+    violations_count INTEGER DEFAULT 0 NOT NULL,
     started_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
     completed_at TIMESTAMPTZ,
     UNIQUE (quiz_id, round_id, user_id)

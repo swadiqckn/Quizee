@@ -24,6 +24,8 @@ import { Question, QuestionOption } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
 import { matchQuizBySlugOrId } from '@/lib/slug';
 import { formatDate } from '@/lib/utils';
+import { useAntiCheat } from '@/hooks/useAntiCheat';
+import { AntiCheatWarningModal, AntiCheatStatusBadge } from '@/components/quiz/AntiCheatWarningModal';
 
 function SlugQuizPlayContent() {
   const params = useParams();
@@ -180,20 +182,34 @@ function SlugQuizPlayContent() {
   };
 
   const handleCompleteAttempt = async (
-    finalAnswersLog: Array<{ questionId: string; selectedOptionIds: string[]; timeTakenMs: number }>
+    finalAnswersLog: Array<{ questionId: string; selectedOptionIds: string[]; timeTakenMs: number }>,
+    status: 'submitted' | 'flagged_for_cheating' = 'submitted',
+    violationsCount: number = antiCheat.violationCount
   ) => {
-    if (!quiz) return;
+    if (!quiz || isSubmitting) return;
     setIsSubmitting(true);
     const result = await submitQuizAttempt({
       quizId: quiz.id,
       roundId: roundId || null,
       answers: finalAnswersLog,
+      status,
+      violationsCount,
     });
 
     setTimeout(() => {
       router.push(`/${slug}/results?entryId=${result.entry.id}`);
     }, 800);
   };
+
+  const antiCheat = useAntiCheat({
+    enabled: quiz?.anti_cheat_enabled === true,
+    maxViolations: quiz?.max_violations || 3,
+    isActive: Boolean(quiz && currentUser && !isSubmitting && activeQuestions.length > 0),
+    onMaxViolationsReached: (violationsCount) => {
+      // Auto submit immediately on max violations
+      handleCompleteAttempt(answersLog, 'flagged_for_cheating', violationsCount);
+    },
+  });
 
   if (isLoading || isFetchingDirect) {
     return (
@@ -219,7 +235,10 @@ function SlugQuizPlayContent() {
 
   // Check if participant already completed this quiz and retries are disallowed
   const existingCompletedEntry = entries.find(
-    (e) => e.quiz_id === quiz.id && (currentUser ? e.user_id === currentUser.id : false) && e.status === 'submitted'
+    (e) =>
+      e.quiz_id === quiz.id &&
+      (currentUser ? e.user_id === currentUser.id : false) &&
+      (e.status === 'submitted' || e.status === 'flagged_for_cheating')
   );
 
   const disallowRetries = quiz.allow_retries !== true;
@@ -394,7 +413,10 @@ function SlugQuizPlayContent() {
   const timerPercentage = (timeRemaining / maxQTime) * 100;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <div
+      {...antiCheat.containerProps}
+      className={`max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 ${antiCheat.containerProps.className}`}
+    >
       {/* Top Arena HUD Bar */}
       <div className="p-4 rounded-3xl bg-white border border-[#ebdcd1] shadow-sm flex items-center justify-between gap-4">
         {/* Left: Round & Question Progress */}
@@ -403,9 +425,16 @@ function SlugQuizPlayContent() {
             {currentIndex + 1}
           </div>
           <div>
-            <p className="text-xs font-bold text-slate-900">
-              Question {currentIndex + 1} <span className="text-slate-400">/ {activeQuestions.length}</span>
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-bold text-slate-900">
+                Question {currentIndex + 1} <span className="text-slate-400">/ {activeQuestions.length}</span>
+              </p>
+              <AntiCheatStatusBadge
+                enabled={quiz.anti_cheat_enabled}
+                violationCount={antiCheat.violationCount}
+                maxViolations={antiCheat.maxViolations}
+              />
+            </div>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
               {currentRound ? currentRound.title : quiz.title}
             </p>
@@ -445,29 +474,30 @@ function SlugQuizPlayContent() {
       {/* Question Card */}
       <div className="p-8 sm:p-10 rounded-3xl bg-white border border-[#ebdcd1] shadow-xl space-y-6">
         {/* Question Text */}
-        <div className="space-y-3">
+        <div className="space-y-3 select-none">
           <div className="flex items-center justify-between">
             <span className="text-xs font-bold text-[#e05a38] uppercase tracking-wider">Single Choice</span>
             <span className="text-xs text-slate-400 font-bold">Base: {currentQ.points} pts</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-snug select-none">
             {currentQ.question_text}
           </h2>
         </div>
 
         {/* Attachment Media if present */}
         {currentQ.attachment_url && (
-          <div className="rounded-2xl overflow-hidden border border-slate-200 max-h-72 bg-slate-50 flex items-center justify-center relative group">
+          <div className="rounded-2xl overflow-hidden border border-slate-200 max-h-72 bg-slate-50 flex items-center justify-center relative group select-none pointer-events-none">
             <img
               src={currentQ.attachment_url}
               alt="Question media"
-              className="max-h-72 object-contain w-full"
+              className="max-h-72 object-contain w-full select-none pointer-events-none"
+              onContextMenu={(e) => e.preventDefault()}
             />
           </div>
         )}
 
         {/* MCQ Options Grid */}
-        <div className="grid grid-cols-1 gap-3 pt-2">
+        <div className="grid grid-cols-1 gap-3 pt-2 select-none">
           {currentQ.options.map((option, idx) => {
             const isSelected = currentSelection.includes(option.id);
             const letter = String.fromCharCode(65 + idx);
@@ -477,7 +507,7 @@ function SlugQuizPlayContent() {
                 key={option.id}
                 type="button"
                 onClick={() => handleSelectOption(option.id)}
-                className={`w-full p-4 rounded-2xl border-2 text-left transition flex items-center justify-between gap-4 ${
+                className={`w-full p-4 rounded-2xl border-2 text-left transition flex items-center justify-between gap-4 select-none ${
                   isSelected
                     ? 'bg-[#fff0ea] border-[#e05a38] text-slate-950 shadow-md shadow-[#e05a38]/10'
                     : 'bg-white border-[#ebdcd1] hover:border-slate-400 text-slate-800'
@@ -493,7 +523,7 @@ function SlugQuizPlayContent() {
                   >
                     {letter}
                   </span>
-                  <span className="text-sm font-bold leading-relaxed">{option.text}</span>
+                  <span className="text-sm font-bold leading-relaxed select-none">{option.text}</span>
                 </div>
 
                 {isSelected && <CheckCircle2 className="w-5 h-5 text-[#e05a38] shrink-0" />}
@@ -525,6 +555,16 @@ function SlugQuizPlayContent() {
           </button>
         </div>
       </div>
+
+      {/* Anti-Cheat Warning Modal */}
+      <AntiCheatWarningModal
+        isOpen={antiCheat.isWarningModalOpen}
+        violation={antiCheat.lastViolation}
+        violationCount={antiCheat.violationCount}
+        maxViolations={antiCheat.maxViolations}
+        isFlagged={antiCheat.isFlagged}
+        onDismiss={antiCheat.dismissWarning}
+      />
     </div>
   );
 }

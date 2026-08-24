@@ -120,15 +120,21 @@ export function Navbar() {
           {isAdmin && (
             <div className="relative">
               <button
-                onClick={() => setOrgDropdownOpen(!orgDropdownOpen)}
-                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#ebdcd1] text-xs font-semibold text-slate-700 hover:text-[#e05a38] hover:border-[#e05a38]/40 shadow-sm transition"
+                onClick={() => {
+                  if (currentUser?.role === 'superadmin') {
+                    setOrgDropdownOpen(!orgDropdownOpen);
+                  }
+                }}
+                className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-[#ebdcd1] text-xs font-semibold text-slate-700 shadow-sm transition ${
+                  currentUser?.role === 'superadmin' ? 'hover:text-[#e05a38] hover:border-[#e05a38]/40 cursor-pointer' : 'cursor-default'
+                }`}
               >
                 <Building2 className="w-3.5 h-3.5 text-[#e05a38]" />
-                <span>{activeOrg ? activeOrg.name : 'All Tenants'}</span>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+                <span>{activeOrg ? activeOrg.name : `${currentUser?.full_name || currentUser?.username || 'Organizer'}'s Workspace`}</span>
+                {currentUser?.role === 'superadmin' && <ChevronDown className="w-3 h-3 text-slate-400" />}
               </button>
 
-              {orgDropdownOpen && (
+              {currentUser?.role === 'superadmin' && orgDropdownOpen && (
                 <div className="absolute left-0 mt-2 w-56 rounded-2xl bg-white border border-[#ebdcd1] shadow-xl py-1.5 z-50">
                   <div className="px-3.5 py-1.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                     Select Tenant Org

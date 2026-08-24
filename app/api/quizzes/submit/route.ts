@@ -5,7 +5,17 @@ import { ScoringStrategy } from '@/lib/types';
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { quizId, roundId, answers, scoringStrategy, basePoints, timeLimitSec, qualificationCriteria } = body;
+    const {
+      quizId,
+      roundId,
+      answers,
+      scoringStrategy,
+      basePoints,
+      timeLimitSec,
+      qualificationCriteria,
+      status,
+      violationsCount,
+    } = body;
 
     let totalScore = 0;
     let totalCorrect = 0;
@@ -32,12 +42,15 @@ export async function POST(req: NextRequest) {
       return { ...ans, pointsAwarded: 0, isCorrect: false };
     });
 
-    const isQualified = evaluateQualification({
-      score: totalScore,
-      totalCorrect,
-      minScoreToQualify: qualificationCriteria?.minScore,
-      minCorrectToQualify: qualificationCriteria?.minCorrect,
-    });
+    const isFlagged = status === 'flagged_for_cheating';
+    const isQualified = isFlagged
+      ? false
+      : evaluateQualification({
+          score: totalScore,
+          totalCorrect,
+          minScoreToQualify: qualificationCriteria?.minScore,
+          minCorrectToQualify: qualificationCriteria?.minCorrect,
+        });
 
     return NextResponse.json({
       success: true,
@@ -45,6 +58,8 @@ export async function POST(req: NextRequest) {
       totalCorrect,
       totalTimeTakenMs,
       qualifiedForNextRound: isQualified,
+      status: status || 'submitted',
+      violationsCount: violationsCount || 0,
       evaluatedAnswers,
     });
   } catch (error: any) {
