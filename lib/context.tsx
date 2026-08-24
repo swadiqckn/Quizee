@@ -166,50 +166,29 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         activeUserProfile = newProfile;
       }
 
-      // Ensure this admin has a personal workspace organization linked via owner_id
-      let userOrg = organisations.find(
-        (o) => o.owner_id === activeUserProfile.id || (activeUserProfile.org_id && o.id === activeUserProfile.org_id)
-      );
+      // Find existing organization for this admin (strictly no auto-generation)
+      let userOrg: Organisation | null = null;
 
-      if (!userOrg) {
-        try {
-          const { data: dbOrg } = await supabase
+      try {
+        const { data: dbOrg } = await supabase
+          .from('organisations')
+          .select('*')
+          .eq('owner_id', activeUserProfile.id)
+          .maybeSingle();
+
+        if (dbOrg) {
+          userOrg = dbOrg;
+        } else if (activeUserProfile.org_id) {
+          const { data: dbOrgById } = await supabase
             .from('organisations')
             .select('*')
-            .eq('owner_id', activeUserProfile.id)
+            .eq('id', activeUserProfile.org_id)
             .maybeSingle();
-
-          if (dbOrg) {
-            userOrg = dbOrg;
+          if (dbOrgById) {
+            userOrg = dbOrgById;
           }
-        } catch (e) {}
-      }
-
-      if (!userOrg) {
-        const orgSlug = `${username.toLowerCase().replace(/[^a-z0-9_-]/g, '')}-workspace`;
-        try {
-          const { data: createdOrg } = await supabase
-            .from('organisations')
-            .insert({
-              name: `${activeUserProfile.full_name || username}'s Workspace`,
-              slug: `${orgSlug}-${Date.now().toString(36).slice(-4)}`,
-              owner_id: activeUserProfile.id,
-              allow_public_registration: true,
-              primary_color: '#6366f1',
-              plan: 'free',
-              quizzes_created_this_month: 0,
-            })
-            .select()
-            .single();
-
-          if (createdOrg) {
-            userOrg = createdOrg;
-            setOrganisations((prev) => [...prev.filter((o) => o.id !== createdOrg.id), createdOrg]);
-            activeUserProfile = { ...activeUserProfile, org_id: createdOrg.id };
-            await supabase.from('users').update({ org_id: createdOrg.id }).eq('id', activeUserProfile.id);
-          }
-        } catch (e) {}
-      }
+        }
+      } catch (e) {}
 
       if (userOrg) {
         setActiveOrg(userOrg);
@@ -235,26 +214,11 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     try {
       setIsLoading(true);
 
-      // 1. Fetch Organisations (Ensure at least 1 default exists)
+      // 1. Fetch Organisations (No auto-creation)
       let currentOrgs: Organisation[] = [];
       const { data: orgsData } = await supabase.from('organisations').select('*');
-      if (orgsData && orgsData.length > 0) {
+      if (orgsData) {
         currentOrgs = orgsData;
-      } else {
-        // Create default organization
-        const { data: createdOrg } = await supabase
-          .from('organisations')
-          .insert({
-            name: 'Primary Workspace',
-            slug: 'main',
-            allow_public_registration: true,
-            primary_color: '#6366f1',
-            plan: 'free',
-            quizzes_created_this_month: 0,
-          })
-          .select()
-          .single();
-        if (createdOrg) currentOrgs = [createdOrg];
       }
 
       setOrganisations(currentOrgs);
@@ -555,6 +519,18 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
 
   const createOrganisation = async (data: { name: string; slug?: string; logo_url?: string }): Promise<{ success: boolean; organisation?: Organisation; error?: string }> => {
     if (!currentUser) return { success: false, error: 'User must be logged in to create an organization.' };
+
+    // Enforce 1 organisation per admin (unless superadmin)
+    if (currentUser.role !== 'superadmin') {
+      const existingOwned = organisations.find((o) => o.owner_id === currentUser.id);
+      if (existingOwned) {
+        return {
+          success: false,
+          error: `You already manage "${existingOwned.name}". Each admin is only allowed to manage one organization workspace.`,
+        };
+      }
+    }
+
     const orgSlug = data.slug?.trim() || slugify(data.name || 'org');
 
     try {
@@ -578,8 +554,12 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       }
 
       if (newOrg) {
-        setOrganisations((prev) => [...prev, newOrg]);
+        setOrganisations((prev) => [...prev.filter((o) => o.id !== newOrg.id), newOrg]);
         setActiveOrg(newOrg);
+        setCurrentUser((prev) => (prev ? { ...prev, org_id: newOrg.id } : prev));
+        try {
+          await supabase.from('users').update({ org_id: newOrg.id }).eq('id', currentUser.id);
+        } catch (e) {}
         return { success: true, organisation: newOrg };
       }
     } catch (e: any) {

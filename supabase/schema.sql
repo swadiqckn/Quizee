@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS public.organisations (
     name TEXT NOT NULL,
     slug TEXT NOT NULL UNIQUE,
     logo_url TEXT,
-    owner_id UUID, -- References users(id)
+    owner_id UUID UNIQUE, -- References users(id) (Each admin owns at most one organization)
     allow_public_registration BOOLEAN DEFAULT TRUE NOT NULL,
     primary_color TEXT DEFAULT '#6366f1',
     plan plan_type DEFAULT 'free' NOT NULL, -- 'free' (max 100 participants, 2 quizzes/mo) vs 'plus' (unlimited)
