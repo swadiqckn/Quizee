@@ -108,13 +108,24 @@ export default function AdminDashboardPage() {
             </span>
           </Link>
 
-          <Link
-            href="/admin/quizzes/new"
-            className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition hover:scale-105"
-          >
-            <Plus className="w-4 h-4" />
-            Create Competition
-          </Link>
+          {!quota.allowed ? (
+            <Link
+              href="/admin/billing"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-lg shadow-amber-600/20 transition hover:scale-105"
+              title="Quiz creation limit reached. Upgrade to Plus for unlimited quizzes."
+            >
+              <Crown className="w-4 h-4" />
+              <span>Upgrade to Create</span>
+            </Link>
+          ) : (
+            <Link
+              href="/admin/quizzes/new"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition hover:scale-105"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Competition</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -192,12 +203,21 @@ export default function AdminDashboardPage() {
             <h2 className="text-lg font-bold text-slate-900">Your Competitions</h2>
             <p className="text-xs text-slate-500 mt-0.5">Manage tournament levels, questions, and live monitors</p>
           </div>
-          <Link
-            href="/admin/quizzes/new"
-            className="text-xs font-bold text-[#e05a38] hover:underline flex items-center gap-1"
-          >
-            New Quiz <Plus className="w-3.5 h-3.5" />
-          </Link>
+          {!quota.allowed ? (
+            <Link
+              href="/admin/billing"
+              className="text-xs font-bold text-amber-600 hover:underline flex items-center gap-1"
+            >
+              Upgrade to Create <Crown className="w-3.5 h-3.5" />
+            </Link>
+          ) : (
+            <Link
+              href="/admin/quizzes/new"
+              className="text-xs font-bold text-[#e05a38] hover:underline flex items-center gap-1"
+            >
+              New Quiz <Plus className="w-3.5 h-3.5" />
+            </Link>
+          )}
         </div>
 
         {adminQuizzes.length === 0 ? (
@@ -213,11 +233,11 @@ export default function AdminDashboardPage() {
             </div>
             <div className="pt-2">
               <Link
-                href="/admin/quizzes/new"
+                href={!quota.allowed ? '/admin/billing' : '/admin/quizzes/new'}
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-lg shadow-[#e05a38]/20 transition hover:scale-105"
               >
-                <Plus className="w-4 h-4" />
-                Create Your First Competition
+                {!quota.allowed ? <Crown className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+                {!quota.allowed ? 'Upgrade Plan to Create Competitions' : 'Create Your First Competition'}
               </Link>
             </div>
           </div>

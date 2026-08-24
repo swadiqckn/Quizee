@@ -168,54 +168,84 @@ export default function NewQuizPage() {
         </div>
       </div>
 
-      {/* Plan Limit Exceeded Alert */}
-      {!quota.allowed && (
-        <div className="p-6 rounded-3xl bg-rose-50 border-2 border-rose-200 space-y-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="w-6 h-6 text-rose-600 shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-base font-bold text-rose-900">Monthly Quiz Limit Reached (Free Plan)</h3>
-              <p className="text-xs text-rose-700 mt-1 leading-relaxed font-medium">
-                The Free Starter Plan allows a maximum of <strong>2 quizzes per month</strong>. You have already created 2 quizzes this month.
-              </p>
-            </div>
+      {/* If limit is reached: Show full Paywall Barrier with Upgrade options instead of the form */}
+      {!quota.allowed ? (
+        <div className="p-8 sm:p-12 rounded-3xl bg-white border border-[#ebdcd1] shadow-xl text-center space-y-6 max-w-2xl mx-auto my-6">
+          <div className="w-16 h-16 rounded-3xl bg-[#fff0ea] border border-[#ffd8cb] flex items-center justify-center text-[#e05a38] mx-auto shadow-sm">
+            <Crown className="w-8 h-8" />
           </div>
 
-          <div className="flex items-center gap-3 pt-2">
+          <div className="space-y-2">
+            <span className="px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200">
+              Monthly Limit Reached (Free Plan)
+            </span>
+            <h2 className="text-2xl font-bold text-slate-900">Upgrade to Create More Competitions</h2>
+            <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+              The Free Starter Plan allows a maximum of <strong>2 quizzes per month</strong>. You have already created {quota.currentCount} quizzes this month.
+            </p>
+          </div>
+
+          {/* Plus Plan Benefits */}
+          <div className="p-5 rounded-2xl bg-[#fffaf5] border border-[#ffd8cb] text-left space-y-3 text-xs text-slate-700">
+            <p className="font-bold text-slate-900 text-xs uppercase tracking-wider">With Plus Plan ($29/mo), you unlock:</p>
+            <ul className="space-y-2">
+              <li className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span><strong>Unlimited Competitions & Tournaments</strong> (No monthly limits)</span>
+              </li>
+              <li className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span><strong>Unlimited Contestants per Competition</strong> (No 100-user cap)</span>
+              </li>
+              <li className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span><strong>Full Proctoring & Anti-Cheat Protection</strong></span>
+              </li>
+              <li className="flex items-center gap-2 font-medium">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span><strong>Dedicated URL Slugs & Whitelabel Branding</strong></span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Upgrade & Redirect Actions */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <button
-              onClick={() => {
-                upgradeActiveOrgPlan('plus');
-                setErrorMessage(null);
+              onClick={async () => {
+                await upgradeActiveOrgPlan('plus');
+                router.refresh();
               }}
-              className="px-5 py-2.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-md transition flex items-center gap-2"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-[#e05a38] hover:bg-[#c84a29] text-white font-bold text-xs shadow-xl shadow-[#e05a38]/25 transition hover:scale-105"
             >
               <Crown className="w-4 h-4" />
-              Upgrade to Plus Plan ($29/mo)
+              <span>Upgrade to Plus Plan ($29/mo)</span>
             </button>
+
             <Link
               href="/admin/billing"
-              className="text-xs text-slate-700 font-bold hover:underline px-3 py-2"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition"
             >
-              View Plan Comparisons
+              <span>View Plans & Billing</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
-      )}
+      ) : (
+        <>
+          {errorMessage && (
+            <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-bold">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
 
-      {errorMessage && (
-        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs flex items-center gap-2 font-bold">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{errorMessage}</span>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Section 1: Basic Information */}
-        <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Trophy className="w-5 h-5 text-[#e05a38]" />
-            1. Basic Information
-          </h2>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Section 1: Basic Information */}
+            <div className="p-8 rounded-3xl bg-white border border-[#ebdcd1] space-y-6 shadow-sm">
+              <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-[#e05a38]" />
+                1. Basic Information
+              </h2>
 
           <div className="space-y-4">
             <div>
@@ -812,6 +842,8 @@ export default function NewQuizPage() {
           </button>
         </div>
       </form>
-    </div>
+    </>
+  )}
+</div>
   );
 }
