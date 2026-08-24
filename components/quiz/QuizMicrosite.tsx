@@ -1088,20 +1088,32 @@ export function QuizMicrosite({
                                 const letter = String.fromCharCode(65 + optIdx);
 
                                 let containerClass = 'bg-white border-slate-200 text-slate-700';
-                                let badgeText = null;
+                                let iconBadge = null;
 
                                 if (isSelected && isCorrectOption) {
                                   // Selected and correct -> Bold Green Theme
                                   containerClass = 'bg-emerald-50 border-2 border-emerald-500 text-emerald-800 font-bold';
-                                  badgeText = '✓ Your Answer (Correct)';
+                                  iconBadge = (
+                                    <span className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                    </span>
+                                  );
                                 } else if (isSelected && !isCorrectOption) {
                                   // Selected and wrong -> Bold Red Theme
                                   containerClass = 'bg-rose-50 border-2 border-rose-500 text-rose-800 font-bold';
-                                  badgeText = '✗ Your Answer (Incorrect)';
+                                  iconBadge = (
+                                    <span className="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                      <X className="w-3.5 h-3.5 stroke-[3]" />
+                                    </span>
+                                  );
                                 } else if (!isSelected && isCorrectOption) {
                                   // Not selected but is correct -> Green Theme
                                   containerClass = 'bg-emerald-50/70 border-2 border-emerald-400 text-emerald-800 font-bold';
-                                  badgeText = '✓ Correct Option';
+                                  iconBadge = (
+                                    <span className="w-6 h-6 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                    </span>
+                                  );
                                 }
 
                                 return (
@@ -1115,11 +1127,7 @@ export function QuizMicrosite({
                                       </span>
                                       <span>{opt.text}</span>
                                     </div>
-                                    {badgeText && (
-                                      <span className="text-[10px] uppercase font-extrabold tracking-wider shrink-0">
-                                        {badgeText}
-                                      </span>
-                                    )}
+                                    {iconBadge}
                                   </div>
                                 );
                               })}

@@ -371,14 +371,13 @@ function SlugQuizResultsContent() {
                     </div>
 
                     <span
-                      className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 shrink-0 ${
+                      className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 ${
                         isCorrect
                           ? 'bg-[#dcfce7] text-[#15803d] border border-[#bbf7d0]'
                           : 'bg-[#fee2e2] text-[#b91c1c] border border-[#fecaca]'
                       }`}
                     >
-                      {isCorrect ? <Check className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}
-                      <span>{isCorrect ? 'Correct' : 'Incorrect'}</span>
+                      {isCorrect ? <Check className="w-4 h-4 stroke-[3]" /> : <X className="w-4 h-4 stroke-[3]" />}
                     </span>
                   </div>
 
@@ -390,17 +389,29 @@ function SlugQuizResultsContent() {
                       const letter = String.fromCharCode(65 + optIdx);
 
                       let style = 'bg-white border-slate-200 text-slate-700';
-                      let badge = null;
+                      let iconBadge = null;
 
                       if (isSelected && isCorrectOption) {
-                        style = 'bg-[#dcfce7] border-[#10b981] text-[#15803d] font-bold';
-                        badge = '✓ Your Answer (Correct)';
+                        style = 'bg-[#dcfce7] border-2 border-[#10b981] text-[#15803d] font-bold';
+                        iconBadge = (
+                          <span className="w-6 h-6 rounded-full bg-[#10b981] text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </span>
+                        );
                       } else if (isSelected && !isCorrectOption) {
-                        style = 'bg-[#fee2e2] border-[#ef4444] text-[#b91c1c] font-bold';
-                        badge = '✗ Your Answer (Wrong)';
+                        style = 'bg-[#fee2e2] border-2 border-[#ef4444] text-[#b91c1c] font-bold';
+                        iconBadge = (
+                          <span className="w-6 h-6 rounded-full bg-[#ef4444] text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <X className="w-3.5 h-3.5 stroke-[3]" />
+                          </span>
+                        );
                       } else if (!isSelected && isCorrectOption) {
-                        style = 'bg-[#f0fdf4] border-[#10b981] text-[#15803d] font-bold';
-                        badge = '✓ Correct Option';
+                        style = 'bg-[#f0fdf4] border-2 border-[#10b981] text-[#15803d] font-bold';
+                        iconBadge = (
+                          <span className="w-6 h-6 rounded-full bg-[#10b981] text-white flex items-center justify-center shrink-0 shadow-xs">
+                            <Check className="w-3.5 h-3.5 stroke-[3]" />
+                          </span>
+                        );
                       }
 
                       return (
@@ -414,11 +425,7 @@ function SlugQuizResultsContent() {
                             </span>
                             <span>{opt.text}</span>
                           </div>
-                          {badge && (
-                            <span className="text-[10px] uppercase font-bold shrink-0">
-                              {badge}
-                            </span>
-                          )}
+                          {iconBadge}
                         </div>
                       );
                     })}
