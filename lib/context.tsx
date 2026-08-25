@@ -15,7 +15,7 @@ import {
   PlanType,
   PLAN_CONFIG,
 } from './types';
-import { calculateQuestionPoints, evaluateQualification } from './scoring';
+import { calculateQuestionPoints, evaluateQualification, getDecayStartTimestamp } from './scoring';
 import { slugify } from './slug';
 import { createClient } from './supabase/client';
 
@@ -94,6 +94,8 @@ interface QuizPlatformContextType {
       questionId: string;
       selectedOptionIds: string[];
       timeTakenMs: number;
+      clientAnsweredAt?: string;
+      answeredAt?: string;
     }>;
     status?: EntryStatus;
     violationsCount?: number;
@@ -166,7 +168,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         activeUserProfile = newProfile;
       }
 
-      // Find existing organization for this admin (strictly no auto-generation)
       let userOrg: Organisation | null = null;
 
       try {
@@ -209,12 +210,10 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     }
   };
 
-  // Fetch real database records from Supabase
   const refreshData = async () => {
     try {
       setIsLoading(true);
 
-      // 1. Fetch Organisations (No auto-creation)
       let currentOrgs: Organisation[] = [];
       const { data: orgsData } = await supabase.from('organisations').select('*');
       if (orgsData) {
@@ -226,13 +225,11 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         setActiveOrg(currentOrgs[0]);
       }
 
-      // 2. Fetch Users
       const { data: usersData } = await supabase.from('users').select('*');
       if (usersData) {
         setAllUsers(usersData);
       }
 
-      // 3. Fetch Quizzes
       const { data: quizzesData } = await supabase
         .from('quizzes')
         .select('*, organisation:organisations(*)');
@@ -240,19 +237,16 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         setQuizzes(quizzesData);
       }
 
-      // 4. Fetch Tournament Rounds
       const { data: roundsData } = await supabase.from('tournament_rounds').select('*');
       if (roundsData) {
         setRounds(roundsData);
       }
 
-      // 5. Fetch Questions
       const { data: questionsData } = await supabase.from('questions').select('*');
       if (questionsData) {
         setQuestions(questionsData);
       }
 
-      // 6. Fetch Entries
       const { data: entriesData } = await supabase
         .from('entries')
         .select('*, user:users(*), quiz:quizzes(*), round:tournament_rounds(*)');
@@ -260,7 +254,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         setEntries(entriesData);
       }
 
-      // 7. Fetch Winners
       const { data: winnersData } = await supabase
         .from('winners')
         .select('*, user:users(*)');
@@ -268,7 +261,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         setWinners(winnersData);
       }
 
-      // 8. Fetch Referrals
       const { data: referralsData } = await supabase
         .from('referrals')
         .select('*, referee:users!referrals_referee_id_fkey(*), referrer:users!referrals_referrer_id_fkey(*)');
@@ -283,7 +275,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   };
 
   useEffect(() => {
-    // 1. Restore local cache if present
     try {
       const savedUser = localStorage.getItem('quizee_current_user');
       if (savedUser) {
@@ -291,14 +282,12 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       }
     } catch (e) {}
 
-    // 2. Get real Supabase active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         loadUserProfile(session.user);
       }
     });
 
-    // 3. Subscribe to real auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -322,7 +311,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   const login = async (username: string, _password?: string) => {
     const cleanUsername = username.trim().toLowerCase();
     
-    // Query Supabase for username
     let user = allUsers.find((u) => u.username?.toLowerCase() === cleanUsername);
 
     if (!user) {
@@ -520,7 +508,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   const createOrganisation = async (data: { name: string; slug?: string; logo_url?: string }): Promise<{ success: boolean; organisation?: Organisation; error?: string }> => {
     if (!currentUser) return { success: false, error: 'User must be logged in to create an organization.' };
 
-    // Enforce 1 organisation per admin (unless superadmin)
     if (currentUser.role !== 'superadmin') {
       const existingOwned = organisations.find((o) => o.owner_id === currentUser.id);
       if (existingOwned) {
@@ -605,7 +592,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     const currentPlan: PlanType = activeOrg?.plan || 'free';
     const participantCap = currentPlan === 'free' ? 100 : null;
 
-    // Ensure we have a valid org_id
     const targetOrgId: string = activeOrg?.id || (organisations.length > 0 ? organisations[0].id : generateUUID());
 
     const quizInsert = {
@@ -642,7 +628,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     let newQuiz: Quiz;
 
     try {
-      // First attempt with slug, allow_retries, and is_public
       const { data: dbQuiz, error } = await supabase
         .from('quizzes')
         .insert({
@@ -869,9 +854,15 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
   }: {
     quizId: string;
     roundId: string | null;
-    answers: Array<{ questionId: string; selectedOptionIds: string[]; timeTakenMs: number }>;
+    answers: Array<{
+      questionId: string;
+      selectedOptionIds: string[];
+      timeTakenMs: number;
+      clientAnsweredAt?: string;
+      answeredAt?: string;
+    }>;
     status?: EntryStatus;
-        violationsCount?: number;
+    violationsCount?: number;
   }) => {
     const targetQuiz = quizzes.find((q) => q.id === quizId);
     const targetRound = rounds.find((r) => r.id === roundId);
@@ -889,7 +880,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       });
     }
 
-    // If retries are disallowed, check if user already submitted
     if (targetQuiz && targetQuiz.allow_retries !== true && existingEntry) {
       return {
         entry: existingEntry,
@@ -900,6 +890,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     }
 
     const strategy: ScoringStrategy = targetQuiz?.scoring_strategy || 'fixed';
+    const decayStartTimestamp = getDecayStartTimestamp(targetQuiz, targetRound);
 
     let calculatedScore = 0;
     let totalCorrectCount = 0;
@@ -925,13 +916,27 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
               ? question.time_limit_sec
               : (targetQuiz?.time_limit_per_question_sec ?? 0));
 
+        let decayElapsedMs = ans.timeTakenMs;
+        if (strategy === 'time_decay') {
+          const answerTimestampStr = ans.clientAnsweredAt || ans.answeredAt;
+          if (decayStartTimestamp && answerTimestampStr) {
+            const answeredTime = new Date(answerTimestampStr).getTime();
+            if (answeredTime < decayStartTimestamp) {
+              decayElapsedMs = 0;
+            } else {
+              decayElapsedMs = answeredTime - decayStartTimestamp;
+            }
+          }
+        }
+
         const pts = calculateQuestionPoints({
           strategy,
           basePoints: question.points,
           timeLimitSec: effectiveLimit,
           timeTakenMs: ans.timeTakenMs,
+          decayElapsedMs,
           isCorrect: true,
-          decayMinPoints: targetRound?.decay_min_points ?? targetQuiz?.decay_min_points ?? 1,
+          decayMinPoints: targetRound?.decay_min_points ?? targetQuiz?.decay_min_points ?? 0,
         });
         calculatedScore += pts;
       }
@@ -959,14 +964,28 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
             ? q.time_limit_sec
             : (targetQuiz?.time_limit_per_question_sec ?? 0));
 
+      let decayElapsedMs = ans.timeTakenMs;
+      if (strategy === 'time_decay') {
+        const answerTimestampStr = ans.clientAnsweredAt || ans.answeredAt;
+        if (decayStartTimestamp && answerTimestampStr) {
+          const answeredTime = new Date(answerTimestampStr).getTime();
+          if (answeredTime < decayStartTimestamp) {
+            decayElapsedMs = 0;
+          } else {
+            decayElapsedMs = answeredTime - decayStartTimestamp;
+          }
+        }
+      }
+
       const pts = isCorrect
         ? calculateQuestionPoints({
             strategy,
             basePoints: q ? q.points : 10,
             timeLimitSec: effectiveLimit,
             timeTakenMs: ans.timeTakenMs,
+            decayElapsedMs,
             isCorrect: true,
-            decayMinPoints: targetRound?.decay_min_points ?? targetQuiz?.decay_min_points ?? 1,
+            decayMinPoints: targetRound?.decay_min_points ?? targetQuiz?.decay_min_points ?? 0,
           })
         : 0;
 
@@ -977,6 +996,7 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         points: q ? q.points : 10,
         points_awarded: pts,
         time_taken_ms: ans.timeTakenMs,
+        decay_elapsed_ms: decayElapsedMs,
         selected_option_ids: ans.selectedOptionIds,
         is_correct: isCorrect,
         options: q ? q.options : [],
@@ -987,7 +1007,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
     let finalEntry: Entry;
 
     if (existingEntry) {
-      // RETRY / UPDATE: Update the existing database row so participant has max 1 row per quiz
       const updatePayload = {
         score: calculatedScore,
         total_correct: totalCorrectCount,
@@ -1033,7 +1052,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
         }
       } catch (e) {}
 
-      // Update the existing row in client state
       setEntries((prev) => prev.map((item) => (item.id === existingEntry!.id ? finalEntry : item)));
 
       if (currentUser) {
@@ -1056,7 +1074,6 @@ export function QuizPlatformProvider({ children }: { children: React.ReactNode }
       };
     }
 
-    // FIRST ATTEMPT: Insert new entry row
     const entryPayload = {
       quiz_id: quizId,
       round_id: roundId,
