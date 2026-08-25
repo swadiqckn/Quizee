@@ -557,11 +557,12 @@ function SlugQuizPlayContent() {
       {quiz?.anti_cheat_enabled && (
         <>
           <AntiCheatWarningModal
-            isOpen={antiCheat.isWarningModalOpen}
-            warningCount={antiCheat.violationCount}
-            maxViolations={quiz.max_violations || 3}
-            onDismiss={antiCheat.dismissWarning}
-          />
+  isOpen={antiCheat.isWarningModalOpen}
+  violationCount={antiCheat.violationCount} // <-- Change this prop name
+  maxViolations={quiz.max_violations || 3}
+  onDismiss={antiCheat.dismissWarning}
+/>
+
           <AntiCheatFullscreenGate
             isOpen={antiCheat.isFullScreenSupported && !antiCheat.isFullscreen}
             onRequestFullscreen={antiCheat.enterFullscreen}
