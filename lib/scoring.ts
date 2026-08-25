@@ -11,11 +11,39 @@ export interface ScoringParams {
 }
 
 /**
+ * Determines the authoritative decay start timestamp based on tournament round 
+ * versus quiz-level precedence.
+ * 
+ * Precedence:
+ * 1. Current tournament round settings (if decay_start_source === 'scheduled_start')
+ * 2. Quiz settings (if decay_start_source === 'scheduled_start')
+ * 3. Falls back to null (implying 'question_open' behavior)
+ */
+export function getDecayStartTimestamp(
+  quiz: { decay_start_source?: string | null; start_time?: string | null },
+  round?: { decay_start_source?: string | null; scheduled_start_time?: string | null } | null
+): number | null {
+  if (round?.decay_start_source === 'scheduled_start') {
+    return round.scheduled_start_time
+      ? new Date(round.scheduled_start_time).getTime()
+      : null;
+  }
+
+  if (quiz.decay_start_source === 'scheduled_start') {
+    return quiz.start_time
+      ? new Date(quiz.start_time).getTime()
+      : null;
+  }
+
+  return null;
+}
+
+/**
  * Calculates score for a question response based on strategy (Fixed vs Time Decay)
  * In Time-Decay mode:
  * Max points = basePoints (e.g. 10)
  * As time elapses up to timeLimitSec, points decay proportionally down to decayMinPoints.
- * Example: 10s limit, base 10 points, answered in 6s => 4 points awarded.
+ * Example: 10s limit, base 10 points, answered in 6s => points decay down towards minimum.
  *
  * decayElapsedMs: If provided, used for point decay calculation instead of timeTakenMs.
  *                 This enables synchronous decay from scheduled_start time.
@@ -28,7 +56,7 @@ export function calculateQuestionPoints({
   timeTakenMs,
   decayElapsedMs,
   isCorrect,
-  decayMinPoints = 1,
+  decayMinPoints = 0,
 }: ScoringParams): number {
   if (!isCorrect) return 0;
   if (basePoints <= 0) return 0;
@@ -43,13 +71,13 @@ export function calculateQuestionPoints({
   const elapsedMs = decayElapsedMs !== undefined ? decayElapsedMs : timeTakenMs;
   const elapsedSec = Math.min(Math.max(0, elapsedMs / 1000), effectiveLimit);
 
-  // Linear decay formula
-  const fractionRemaining = Math.max(0, 1 - elapsedSec / effectiveLimit);
-  const calculatedPoints = Math.round(basePoints * fractionRemaining);
-
-  // Award at least decayMinPoints (e.g. 0, 1, 2, 5) for a correct answer
-  const floorPts = Math.max(0, Number(decayMinPoints ?? 1));
-  return Math.max(floorPts, calculatedPoints);
+  // Linear time decay calculation bounded by minimum points range
+  const minPoints = Math.max(0, Math.min(decayMinPoints, basePoints));
+  const pointsRange = basePoints - minPoints;
+  const decayFraction = elapsedSec / effectiveLimit;
+  
+  const calculatedPoints = Math.round(basePoints - (pointsRange * decayFraction));
+  return Math.max(minPoints, calculatedPoints);
 }
 
 /**
