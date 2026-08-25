@@ -1,27 +1,21 @@
 // app/[slug]/play/page.tsx
 'use client';
 
-import React, { useState, useEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Clock,
   Zap,
   Sparkles,
-  Layers,
   ArrowRight,
-  CheckCircle2,
   AlertCircle,
-  Volume2,
-  Maximize2,
-  ChevronRight,
   Trophy,
   LogIn,
-  Shield,
 } from 'lucide-react';
 import { useQuizPlatform } from '@/lib/context';
 import { shuffleArray, calculateQuestionPoints, getDecayStartTimestamp } from '@/lib/scoring';
-import { Question, QuestionOption } from '@/lib/types';
+import { Question } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
 import { matchQuizBySlugOrId } from '@/lib/slug';
 import { formatDate } from '@/lib/utils';
@@ -58,7 +52,7 @@ function SlugQuizPlayContent() {
         ? (rounds.find((r) => r.quiz_id === quiz?.id && r.status === 'active') || quizRounds[0] || null)
         : null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!quiz && slug) {
       setIsFetchingDirect(true);
       const supabase = createClient();
@@ -92,7 +86,6 @@ function SlugQuizPlayContent() {
     }
   }, [quiz, slug]);
 
-  // Filter questions for this quiz / round
   const rawQuestions = questions.filter((q) => {
     if (!quiz) return false;
     if (quiz.quiz_type === 'tournament') {
@@ -115,9 +108,7 @@ function SlugQuizPlayContent() {
     Array<{ questionId: string; selectedOptionIds: string[]; timeTakenMs: number; clientAnsweredAt: string; integrityHash: string }>
   >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageModalOpen, setImageModalOpen] = useState(false);
 
-  // Initialize and shuffle questions & options
   useEffect(() => {
     if (rawQuestions.length === 0) return;
 
@@ -151,12 +142,10 @@ function SlugQuizPlayContent() {
   const baseQPts = currentQ?.points || quiz?.base_points_per_question || 10;
   const decayMinPoints = currentRound?.decay_min_points ?? quiz?.decay_min_points ?? 0;
 
-  // Session Nonce for cryptographic tamper protection
   const sessionNonce = React.useMemo(() => {
     return getOrCreateSessionNonce(quiz?.id || 'quiz', currentUser?.id || 'anon');
   }, [quiz?.id, currentUser?.id]);
 
-  // Real-Time Countdown & Synchronous Point Decay Engine
   useEffect(() => {
     if (!currentQ || isSubmitting) return;
 
@@ -177,12 +166,10 @@ function SlugQuizPlayContent() {
     const interval = setInterval(() => {
       const now = Date.now();
       
-      // 1. Participant individual question timer (controls countdown & auto-submission)
       const questionElapsedSec = (now - startTimestamp) / 1000;
       const remainingQuestionTime = Math.max(0, maxQTime - questionElapsedSec);
       setTimeRemaining(remainingQuestionTime);
 
-      // 2. Synchronous scoring timer (controls available points)
       let decayElapsedSec = questionElapsedSec;
       if (decayStartTimestamp) {
         const rawDecayElapsed = (now - decayStartTimestamp) / 1000;
@@ -206,7 +193,7 @@ function SlugQuizPlayContent() {
 
       if (remainingQuestionTime <= 0) {
         clearInterval(interval);
-        handleNextQuestion(true); // Auto submit ONLY on individual question timer expiry
+        handleNextQuestion(true); 
       }
     }, 100);
 
@@ -228,7 +215,6 @@ function SlugQuizPlayContent() {
     const chosenOptions = selectedAnswers[currentQ.id] || [];
     const timestampMs = Date.now();
 
-    // Compute tamper-resistant cryptographic integrity hash
     const integrityHash = await generateAnswerIntegrityHash(
       sessionNonce,
       currentQ.id,
@@ -248,7 +234,6 @@ function SlugQuizPlayContent() {
     const nextAnswersLog = [...answersLog, newLogItem];
     setAnswersLog(nextAnswersLog);
 
-    // Save attempt progress locally so network drop will not affect actual performance
     if (currentUser) {
       saveLocalAttemptProgress(quiz.id, currentUser.id, {
         answersLog: nextAnswersLog,
@@ -263,6 +248,15 @@ function SlugQuizPlayContent() {
       await handleCompleteAttempt(nextAnswersLog);
     }
   };
+
+  const antiCheat = useAntiCheat({
+    enabled: quiz?.anti_cheat_enabled === true,
+    maxViolations: quiz?.max_violations || 3,
+    isActive: Boolean(quiz && currentUser && !isSubmitting && activeQuestions.length > 0),
+    onMaxViolationsReached: (violationsCount) => {
+      handleCompleteAttempt(answersLog, 'flagged_for_cheating', violationsCount);
+    },
+  });
 
   const handleCompleteAttempt = async (
     finalAnswersLog: Array<{ questionId: string; selectedOptionIds: string[]; timeTakenMs: number; clientAnsweredAt: string; integrityHash: string }>,
@@ -288,15 +282,6 @@ function SlugQuizPlayContent() {
     }, 800);
   };
 
-  const antiCheat = useAntiCheat({
-    enabled: quiz?.anti_cheat_enabled === true,
-    maxViolations: quiz?.max_violations || 3,
-    isActive: Boolean(quiz && currentUser && !isSubmitting && activeQuestions.length > 0),
-    onMaxViolationsReached: (violationsCount) => {
-      handleCompleteAttempt(answersLog, 'flagged_for_cheating', violationsCount);
-    },
-  });
-
   if (isLoading || isFetchingDirect) {
     return (
       <div className="max-w-4xl mx-auto py-24 text-center space-y-4">
@@ -319,7 +304,6 @@ function SlugQuizPlayContent() {
     );
   }
 
-  // Check if participant already completed this specific quiz/round and retries are disallowed
   const existingCompletedEntry = entries.find((e) => {
     if (e.quiz_id !== quiz.id) return false;
     if (!currentUser || e.user_id !== currentUser.id) return false;
@@ -390,7 +374,6 @@ function SlugQuizPlayContent() {
     );
   }
 
-  // Check tournament progression & qualification for Round > 1
   if (quiz.quiz_type === 'tournament' && currentRound && currentRound.round_number > 1 && currentUser) {
     const prevRound = quizRounds.find((r) => r.round_number === currentRound.round_number - 1);
     if (prevRound) {
@@ -476,7 +459,6 @@ function SlugQuizPlayContent() {
     }
   }
 
-  // Check if competition start time has not arrived yet
   const scheduledStartTimeStr = currentRound?.scheduled_start_time || quiz.start_time;
   const isScheduledInFuture = scheduledStartTimeStr ? new Date(scheduledStartTimeStr).getTime() > Date.now() : false;
 
@@ -566,18 +548,18 @@ function SlugQuizPlayContent() {
   const selectedOptionIds = currentQ ? selectedAnswers[currentQ.id] || [] : [];
 
   return (
-    <div className="min-h-screen bg-[#faf7f5] pb-16">
+    <div className="min-h-screen bg-[#faf7f5] pb-16" {...antiCheat.containerProps}>
       {quiz?.anti_cheat_enabled && (
         <>
           <AntiCheatWarningModal
-            isOpen={antiCheat.showWarningModal}
+            isOpen={antiCheat.isWarningModalOpen}
             warningCount={antiCheat.violationCount}
             maxViolations={quiz.max_violations || 3}
             onDismiss={antiCheat.dismissWarning}
           />
           <AntiCheatFullscreenGate
-            isOpen={antiCheat.isFullscreenEnforced && !antiCheat.isFullscreen}
-            onRequestFullscreen={antiCheat.requestFullscreen}
+            isOpen={antiCheat.isFullScreenSupported && !antiCheat.isFullscreen}
+            onRequestFullscreen={antiCheat.enterFullscreen}
           />
         </>
       )}
