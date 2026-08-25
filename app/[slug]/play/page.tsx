@@ -546,9 +546,14 @@ function SlugQuizPlayContent() {
   }
 
   const selectedOptionIds = currentQ ? selectedAnswers[currentQ.id] || [] : [];
+  const { className: antiCheatClassName, style: antiCheatStyle, ...antiCheatEvents } = antiCheat.containerProps;
 
   return (
-    <div className="min-h-screen bg-[#faf7f5] pb-16" {...antiCheat.containerProps}>
+    <div 
+      className={`min-h-screen bg-[#faf7f5] pb-16 ${antiCheatClassName || ''}`}
+      style={antiCheatStyle}
+      {...antiCheatEvents}
+    >
       {quiz?.anti_cheat_enabled && (
         <>
           <AntiCheatWarningModal
