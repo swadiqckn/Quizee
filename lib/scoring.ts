@@ -5,6 +5,7 @@ export interface ScoringParams {
   basePoints: number;
   timeLimitSec: number;
   timeTakenMs: number;
+  decayElapsedMs?: number; // Separate decay elapsed time (for scheduled_start mode)
   isCorrect: boolean;
   decayMinPoints?: number;
 }
@@ -15,12 +16,17 @@ export interface ScoringParams {
  * Max points = basePoints (e.g. 10)
  * As time elapses up to timeLimitSec, points decay proportionally down to decayMinPoints.
  * Example: 10s limit, base 10 points, answered in 6s => 4 points awarded.
+ *
+ * decayElapsedMs: If provided, used for point decay calculation instead of timeTakenMs.
+ *                 This enables synchronous decay from scheduled_start time.
+ *                 If not provided, falls back to timeTakenMs.
  */
 export function calculateQuestionPoints({
   strategy,
   basePoints,
   timeLimitSec,
   timeTakenMs,
+  decayElapsedMs,
   isCorrect,
   decayMinPoints = 1,
 }: ScoringParams): number {
@@ -33,10 +39,12 @@ export function calculateQuestionPoints({
 
   // Time decay mode
   const effectiveLimit = timeLimitSec;
-  const timeTakenSec = Math.min(Math.max(0, timeTakenMs / 1000), effectiveLimit);
-  
+  // Use decayElapsedMs if provided (scheduled_start mode), otherwise use timeTakenMs (question_open mode)
+  const elapsedMs = decayElapsedMs !== undefined ? decayElapsedMs : timeTakenMs;
+  const elapsedSec = Math.min(Math.max(0, elapsedMs / 1000), effectiveLimit);
+
   // Linear decay formula
-  const fractionRemaining = Math.max(0, 1 - timeTakenSec / effectiveLimit);
+  const fractionRemaining = Math.max(0, 1 - elapsedSec / effectiveLimit);
   const calculatedPoints = Math.round(basePoints * fractionRemaining);
 
   // Award at least decayMinPoints (e.g. 0, 1, 2, 5) for a correct answer
